@@ -14,6 +14,8 @@ export default defineNuxtConfig({
   },
 
   app: {
+    // Smooth fade/slide between routes (disabled under reduced-motion via CSS)
+    pageTransition: { name: 'page', mode: 'out-in' },
     head: {
       htmlAttrs: { lang: 'en' },
       meta: [

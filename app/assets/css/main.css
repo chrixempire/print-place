@@ -174,19 +174,68 @@ body {
 }
 
 /* ------------------------------------------------------------------ *
- * Scroll reveal (see app/plugins/reveal.ts)
+ * GSAP animations (see app/plugins/animations.ts)
+ * `anim-ready` is added to <html> by the plugin (only when motion is
+ * allowed) so elements waiting to animate are hidden until GSAP takes
+ * over — no flash. No-JS / reduced-motion users never get the class,
+ * so they always see full content.
  * ------------------------------------------------------------------ */
-.reveal-ready [data-reveal] {
+.anim-ready [data-anim] {
   opacity: 0;
-  transform: translateY(28px);
-  transition:
-    opacity 0.7s ease,
-    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: opacity, transform;
 }
-.reveal-ready [data-reveal].in-view {
-  opacity: 1;
-  transform: none;
+/* Curtain wipe (v-curtain) — pre-hidden until GSAP reveals it */
+.anim-ready [data-curtain] {
+  clip-path: inset(0 0 100% 0);
+}
+
+/* Trailing cursor ring (see app/components/AppCursor.vue) — desktop + motion only */
+.app-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 200;
+  width: 34px;
+  height: 34px;
+  border-radius: 9999px;
+  border: 1.5px solid rgba(255, 79, 41, 0.55);
+  pointer-events: none;
+  opacity: 0;
+  will-change: transform;
+}
+@media (pointer: coarse) {
+  .app-cursor {
+    display: none;
+  }
+}
+
+/* Route transitions (Nuxt app.pageTransition = "page") */
+.page-enter-active,
+.page-leave-active {
+  transition:
+    opacity 0.35s ease,
+    transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(24px);
+}
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(-14px);
+}
+
+/* Thin scroll-progress bar (see app/layouts/default.vue) */
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 100;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, var(--color-coral-500), var(--color-primary-500));
+  pointer-events: none;
 }
 
 /* Continuous, non-stop right→left marquee (brands strip + carousels) */
@@ -237,8 +286,11 @@ a {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-  .reveal-ready [data-reveal] {
+  [data-anim] {
     opacity: 1 !important;
     transform: none !important;
+  }
+  [data-curtain] {
+    clip-path: none !important;
   }
 }

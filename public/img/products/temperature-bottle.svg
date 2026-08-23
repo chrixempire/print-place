@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 521" fill="none">
+  <rect width="352" height="521" fill="#e2e2df"/>
+  <g stroke="#a5a4a2" stroke-width="7" stroke-linejoin="round" stroke-linecap="round">
+    <rect x="154" y="120" width="44" height="26" rx="6"/>
+    <path d="M150 146 H202 V150 C202 162 210 168 210 186 V300 C210 312 202 320 190 320 H162 C150 320 142 312 142 300 V186 C142 168 150 162 150 150 Z"/>
+    <path d="M142 214 H210"/>
+  </g>
+  <text x="176" y="388" text-anchor="middle" font-family="system-ui, sans-serif" font-size="26" font-weight="700" fill="#302f30">Temperature bottle</text>
+  <text x="176" y="416" text-anchor="middle" font-family="system-ui, sans-serif" font-size="15" fill="#7c7b7a">Photo coming soon</text>
+</svg>

@@ -1,11 +1,11 @@
 <script setup lang="ts">
 // Site footer — matches Figma node 18491:463687 (pale-yellow, polaroid tee, links, socials).
 const socials = [
-  { icon: '/icons/phone.svg', label: 'Phone', href: 'tel:+234' },
-  { icon: '/icons/linkedin.svg', label: 'LinkedIn', href: '#' },
-  { icon: '/icons/map-point.svg', label: 'Showroom', href: '#' },
-  { icon: '/icons/instagram.svg', label: 'Instagram', href: '#' },
-  { icon: '/icons/whatsapp.svg', label: 'WhatsApp', href: '#' },
+  { icon: '/icons/instagram.svg', label: 'Instagram', href: 'https://www.instagram.com/printplaceng' },
+  { icon: '/icons/youtube.svg', label: 'YouTube', href: 'https://youtube.com/@theprintplaceteam' },
+  { icon: '/icons/tiktok.svg', label: 'TikTok', href: 'https://www.tiktok.com/@printplaceng' },
+  { icon: '/icons/linkedin.svg', label: 'LinkedIn', href: 'https://www.linkedin.com/company/printplacengr/' },
+  { icon: '/icons/x.svg', label: 'X', href: 'https://x.com/printplaceng_' },
 ]
 </script>
 
@@ -45,8 +45,11 @@ const socials = [
         <a
           v-for="s in socials"
           :key="s.label"
+          v-magnetic="0.5"
           :href="s.href"
           :aria-label="s.label"
+          target="_blank"
+          rel="noopener noreferrer"
           class="flex size-8 items-center justify-center rounded-full border border-neutral-50 transition-colors hover:border-neutral-300"
         >
           <img :src="s.icon" :alt="s.label" class="size-4" />

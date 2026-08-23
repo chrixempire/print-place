@@ -21,8 +21,10 @@ const bundles: Bundle[] = [
     theme: 'light',
     price: 'N30,000',
     title: 'New Hire Kit',
-    descPrimary: 'A smooth welcome, a strong first impression, and a team they can instantly connect with.',
-    descSecondary: 'Thermal bottle, and a personalized welcome card.',
+    descPrimary:
+      'Make them feel like they always belonged. A smooth welcome, a strong first impression, and a team they can instantly connect with.',
+    descSecondary:
+      'Branded box, tee, baseball cap, canvas tote bag, thermal bottle, and a personalized welcome card.',
   },
   {
     image: '/img/bundle-rain-ready.png',
@@ -51,18 +53,21 @@ const bundles: Bundle[] = [
     type: 'cta',
     title: 'Got something in mind?',
     subtitle: 'Share your brief.',
-    cta: 'Let’s get started.',
+    cta: 'Start here',
   },
 ]
 
 const products: Product[] = [
-  { image: '/img/products/umbrella.png', name: 'Umbrella', price: 'N9,000' },
+  { image: '/img/products/tshirt.svg', name: 'T-shirt', price: 'N7,000' },
+  { image: '/img/products/facecap.svg', name: 'Face cap', price: 'N4,000' },
+  { image: '/img/products/temperature-bottle.svg', name: 'Temperature bottle', price: 'N4,500' },
   { image: '/img/products/thermal.png', name: 'Thermal Bottles', price: 'N7,500' },
   { image: '/img/products/tote.png', name: 'Tote bag', price: 'N5,000' },
-  { image: '/img/products/mug.png', name: 'Coffee mug', price: 'N3,000' },
-  { image: '/img/products/handfans.png', name: 'Handfans', price: 'N5,000' },
-  { image: '/img/products/ballpen.png', name: 'Ball pen', price: 'N1,200' },
+  { image: '/img/products/umbrella.png', name: 'Umbrella', price: 'N9,000' },
   { image: '/img/products/journal.png', name: 'Spiral Journals', price: 'N1,000' },
+  { image: '/img/products/handfans.png', name: 'Handfans', price: 'N1,000' },
+  { image: '/img/products/mug.png', name: 'Coffee mug', price: 'N3,000' },
+  { image: '/img/products/ballpen.png', name: 'Ball pen', price: 'N1,200' },
 ]
 </script>
 
@@ -71,10 +76,10 @@ const products: Product[] = [
     <!-- Hero -->
     <section class="px-5 pb-16 pt-16 text-center md:pb-24 md:pt-20">
       <div class="mx-auto flex max-w-[640px] flex-col items-center gap-2.5">
-        <h1 class="text-[32px] font-bold leading-[1.05] tracking-[-1px] text-neutral-500 sm:text-[46px] sm:leading-[50px] sm:tracking-[-1.38px]">
+        <h1 v-words class="text-[32px] font-bold leading-[1.05] tracking-[-1px] text-neutral-500 sm:text-[46px] sm:leading-[50px] sm:tracking-[-1.38px]">
           We’ve handled the hard part.
         </h1>
-        <p class="text-[18px] leading-6 text-neutral-400">Your turn to choose</p>
+        <p v-anim:up="150" class="text-[18px] leading-6 text-neutral-400">Your turn to choose</p>
         <AppButton to="/contact" class="mt-2">Let’s talk more</AppButton>
       </div>
     </section>
@@ -82,16 +87,16 @@ const products: Product[] = [
     <!-- Bundles -->
     <section class="mx-auto max-w-[1080px] px-5 pb-20 md:px-6">
       <div class="flex flex-col gap-5">
-        <BundleRow v-for="(b, i) in bundles" :key="b.title" v-reveal="i % 2 === 0 ? 0 : 80" :bundle="b" />
+        <BundleRow v-for="(b, i) in bundles" :key="b.title" v-flip="i * 60" :bundle="b" />
       </div>
     </section>
 
     <!-- Top picks -->
     <section class="overflow-hidden bg-neutral-500 py-16 md:py-24">
-      <h2 class="mb-10 text-center text-[32px] font-bold leading-tight tracking-[-1px] text-white md:mb-14 md:text-[40px]">
+      <h2 v-words class="mb-10 text-center text-[32px] font-bold leading-tight tracking-[-1px] text-white md:mb-14 md:text-[40px]">
         Top picks
       </h2>
-      <TopPicksCarousel :products="products" />
+      <TopPicksCarousel v-anim:up="150" :products="products" />
     </section>
   </div>
 </template>

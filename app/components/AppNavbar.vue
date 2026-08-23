@@ -3,7 +3,7 @@
 </script>
 
 <template>
-  <header class="sticky top-0 z-50 w-full bg-white">
+  <header v-anim:down.now data-anim class="sticky top-0 z-50 w-full bg-white">
     <div class="mx-auto flex h-[64px] max-w-[1080px] items-center justify-between px-5 md:h-[81px] md:px-6">
       <NuxtLink to="/" aria-label="Printplaceng home" class="block">
         <img src="/img/logo.png" alt="Printplaceng" class="h-[34px] w-auto md:h-[38px]" />

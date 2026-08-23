@@ -43,21 +43,20 @@ const faqs: FaqItem[] = [
     <section class="bg-stone-500 px-5 pt-16 md:px-6 md:pt-20">
       <div class="mx-auto flex max-w-[1080px] flex-col items-center gap-[60px]">
         <div class="flex flex-col items-center gap-2.5 text-center">
-          <h1 class="text-[32px] font-bold leading-tight tracking-[-1px] text-neutral-500 sm:text-[46px] sm:leading-[50px] sm:tracking-[-1.38px]">
+          <h1 v-words class="text-[32px] font-bold leading-tight tracking-[-1px] text-neutral-500 sm:text-[46px] sm:leading-[50px] sm:tracking-[-1.38px]">
             Keep up with Print Place
           </h1>
-          <p class="max-w-[509px] text-[18px] leading-6 text-neutral-400">
+          <p v-anim:up="150" class="max-w-[509px] text-[18px] leading-6 text-neutral-400">
             Whether you’re ready to start a project, have a question, or just want to see what we’re creating, we’d love to hear from you.
           </p>
           <AppButton to="/built-for-you" class="mt-2">See packages</AppButton>
         </div>
 
         <div class="flex w-full flex-col items-stretch gap-4 md:flex-row md:items-start md:justify-center md:gap-5">
-          <div class="flex flex-1 flex-col gap-4">
+          <div v-anim:up.stagger class="flex flex-1 flex-col gap-4">
             <div
-              v-for="(c, i) in colA"
+              v-for="c in colA"
               :key="c.title"
-              v-reveal="i * 80"
               class="flex items-center gap-4 rounded-2xl border border-gray-500/50 bg-white px-6 py-[19px] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-coral-500/40 hover:shadow-lg"
             >
               <span class="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#f0f0ef]">
@@ -69,11 +68,10 @@ const faqs: FaqItem[] = [
               </span>
             </div>
           </div>
-          <div class="flex flex-1 flex-col gap-4">
+          <div v-anim:up.stagger="{ delay: 0.1 }" class="flex flex-1 flex-col gap-4">
             <div
-              v-for="(c, i) in colB"
+              v-for="c in colB"
               :key="c.title"
-              v-reveal="i * 80"
               class="flex items-center gap-4 rounded-2xl border border-gray-500/50 bg-white px-6 py-[19px] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-coral-500/40 hover:shadow-lg"
             >
               <span class="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#f0f0ef]">
@@ -92,15 +90,14 @@ const faqs: FaqItem[] = [
     <!-- FRESH OFF THE PRESS -->
     <section class="bg-stone-500 px-5 py-16 md:px-6 md:py-20">
       <div class="mx-auto max-w-[1000px] rounded-[24px] bg-neutral-500 px-4 py-10 md:rounded-[32px] md:px-12 md:py-14">
-        <h2 class="mb-10 text-center text-[32px] font-bold leading-tight tracking-[-1px] text-white md:text-[46px] md:leading-[52px] md:tracking-[-1.38px]">
+        <h2 v-words class="mb-10 text-center text-[32px] font-bold leading-tight tracking-[-1px] text-white md:text-[46px] md:leading-[52px] md:tracking-[-1.38px]">
           Fresh off the press
         </h2>
         <!-- desktop bento -->
-        <div class="relative mx-auto hidden aspect-[890/811] w-full max-w-[890px] md:block">
+        <div v-flip.stagger class="relative mx-auto hidden aspect-[890/811] w-full max-w-[890px] md:block">
           <div
             v-for="(g, i) in gallery"
             :key="i"
-            v-reveal="i * 90"
             class="group absolute overflow-hidden transition-transform duration-500 ease-out hover:scale-[1.03]"
             :style="{ left: g.l, top: g.t, width: g.w, height: g.h, borderRadius: g.r }"
           >
@@ -129,10 +126,10 @@ const faqs: FaqItem[] = [
     <!-- FAQ -->
     <section class="bg-stone-500 px-5 pb-16 md:px-6 md:pb-24">
       <div class="mx-auto flex max-w-[1080px] flex-col gap-10 md:flex-row md:items-start md:justify-between md:gap-12">
-        <h2 v-reveal class="max-w-[336px] text-[40px] font-bold leading-[1.1] tracking-[-1.5px] text-neutral-500 md:text-[46px]">
+        <h2 v-words class="max-w-[336px] text-[40px] font-bold leading-[1.1] tracking-[-1.5px] text-neutral-500 md:text-[46px]">
           Everything you need to know
         </h2>
-        <div v-reveal="120" class="w-full md:max-w-[548px]">
+        <div v-anim:up="120" class="w-full md:max-w-[548px]">
           <FaqAccordion :items="faqs" />
         </div>
       </div>
