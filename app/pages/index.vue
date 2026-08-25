@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import type { FaqItem } from '~/components/FaqAccordion.vue'
 
-useHead({ title: 'Printplaceng — Your custom merch branding partner' })
+useSeo({
+  title: 'Printplaceng — Custom Merch & Branding Partner in Lagos',
+  description:
+    'Printplaceng is Lagos’ custom merch and branding partner — premium branded t-shirts, mugs, tote bags, packaging and print, delivered with structure and speed. Get a quote today.',
+})
 
 const heroCollage = [
   { src: '/img/about/hero/h1.png', w: 194, h: 248 },
@@ -23,38 +27,47 @@ const openFeature = ref(0)
 const toggleFeature = (i: number) => (openFeature.value = openFeature.value === i ? -1 : i)
 
 const team = [
-  { img: '/img/about/founder.png', name: 'Olajumoke Olutomiwa', role: 'Founder & CEO', pos: 'center 20%', zoom: 1.15 },
-  // Placeholder portrait until a real photo of Abiola is supplied.
-  { img: '/img/about/team/abiola.svg', name: 'Abiola Darasimi', role: 'Chief Operating Officer', pos: 'center 50%', zoom: 1 },
-  { img: '/img/about/team/hundeyin.png', name: 'Hundeyin Serah', role: 'Head of Sales', pos: 'center 24%', zoom: 1.05 },
-  { img: '/img/about/team/obasa.png', name: 'Obasa Eniola', role: 'Head of Production', pos: 'center 26%', zoom: 1.28 },
-  { img: '/img/about/team/awoniyi.png', name: 'Awoniyi Peace', role: 'Quality assurance Officer', pos: 'center 28%', zoom: 1.28 },
-  { img: '/img/about/team/awoponle.png', name: 'Awoponle Ibukunoluwa', role: 'Customer Support Representative', pos: 'center 45%', zoom: 1.4 },
-  { img: '/img/about/team/adegboyega.png', name: 'Adegboyega Omolola', role: 'Head of Marketing', pos: 'center 22%', zoom: 1.12 },
-  { img: '/img/about/team/hude.png', name: 'Hude Christianah', role: 'Head of Procurement', pos: 'center 28%', zoom: 1.28 },
+  // CEO card hidden from the "Our team" carousel for now.
+  // { img: '/img/about/founder.png', name: 'Olajumoke Olutomiwa', role: 'Founder & CEO', pos: 'center top', zoom: 1 },
+  { img: '/img/team/darasimi.jpg', name: 'Abiola Darasimi', role: 'Chief Operating Officer', pos: 'center 20%', zoom: 1 },
+  { img: '/img/team/serah.jpg', name: 'Hundeyin Serah', role: 'Head of Sales', pos: 'center 20%', zoom: 1 },
+  { img: '/img/team/eniola.jpg', name: 'Obasa Eniola', role: 'Head of Production', pos: 'center 20%', zoom: 1 },
+  { img: '/img/team/peace.jpg', name: 'Awoniyi Peace', role: 'Quality assurance Officer', pos: 'center 20%', zoom: 1 },
+  // dami.jpg assigned to Ibukunoluwa by elimination — confirm this is the right person.
+  { img: '/img/team/dami.jpg', name: 'Awoponle Ibukunoluwa', role: 'Customer Support Representative', pos: 'center 20%', zoom: 1 },
+  { img: '/img/team/omolola.jpg', name: 'Adegboyega Omolola', role: 'Head of Marketing', pos: 'center 20%', zoom: 1 },
+  { img: '/img/team/christianah.jpg', name: 'Hude Christianah', role: 'Head of Procurement', pos: 'center 20%', zoom: 1 },
 ]
 
-// TEAM carousel — drag-to-scroll with hover arrows that hide at each end.
+// TEAM carousel — hover arrows + hand/drag scroll, with a continuous, seamless
+// INFINITE LEFT loop. The track renders the team twice; scrollLeft advances
+// leftward forever and wraps by exactly one set width, so it never reverses or
+// hits a visible end. User interaction (drag / arrows) takes over, then the loop
+// resumes seamlessly from wherever they left it.
 const teamTrack = ref<HTMLElement | null>(null)
-const atStart = ref(true)
-const atEnd = ref(false)
 const dragging = ref(false)
 
-const updateTeamArrows = () => {
+// Exact width of one full set = left offset of the first card of the 2nd set.
+const setWidth = () => {
   const el = teamTrack.value
-  if (!el) return
-  atStart.value = el.scrollLeft <= 1
-  atEnd.value = el.scrollLeft >= el.scrollWidth - el.clientWidth - 1
+  if (!el || el.children.length <= team.length) return 0
+  return (el.children[team.length] as HTMLElement).offsetLeft - (el.children[0] as HTMLElement).offsetLeft
 }
+const wrap = (v: number, w: number) => (w > 0 ? ((v % w) + w) % w : v)
 
-// Arrow click pages by roughly one viewport of cards.
+// Arrow paging — briefly hand control to a smooth scroll, then resume the loop.
+const interacting = ref(false)
+let interactTimer = 0
 const scrollTeam = (dir: number) => {
   const el = teamTrack.value
   if (!el) return
+  interacting.value = true
+  clearTimeout(interactTimer)
   el.scrollBy({ left: dir * Math.max(el.clientWidth * 0.8, 336), behavior: 'smooth' })
+  interactTimer = window.setTimeout(() => { interacting.value = false }, 600)
 }
 
-// Mouse drag-to-scroll (touch/pen use native horizontal scrolling).
+// Mouse drag-to-scroll (touch/pen use native horizontal scrolling); wraps as it goes.
 let dragStartX = 0
 let dragStartScroll = 0
 const onTeamPointerDown = (e: PointerEvent) => {
@@ -67,7 +80,14 @@ const onTeamPointerDown = (e: PointerEvent) => {
 }
 const onTeamPointerMove = (e: PointerEvent) => {
   if (!dragging.value) return
-  teamTrack.value!.scrollLeft = dragStartScroll - (e.clientX - dragStartX)
+  const el = teamTrack.value!
+  const w = setWidth()
+  let x = dragStartScroll - (e.clientX - dragStartX)
+  if (w > 0) {
+    if (x >= w) { x -= w; dragStartScroll -= w }
+    else if (x < 0) { x += w; dragStartScroll += w }
+  }
+  el.scrollLeft = x
 }
 const onTeamPointerUp = (e: PointerEvent) => {
   if (!dragging.value) return
@@ -75,38 +95,30 @@ const onTeamPointerUp = (e: PointerEvent) => {
   teamTrack.value?.releasePointerCapture?.(e.pointerId)
 }
 
-// Continuous auto-scroll that bounces between the two ends; pauses while the
-// pointer is over the carousel (also revealing the arrows) or during a drag.
-const paused = ref(false)
+// Continuous leftward auto-scroll; yields during drag / arrow interaction.
 const AUTO_SPEED = 42 // px per second
 let rafId = 0
 let lastTs = 0
-let autoDir = 1
 let autoPos = 0
-
 const autoTick = (ts: number) => {
   rafId = requestAnimationFrame(autoTick)
   const el = teamTrack.value
   if (!el) return
   const dt = lastTs ? Math.min((ts - lastTs) / 1000, 0.05) : 0
   lastTs = ts
-  const max = el.scrollWidth - el.clientWidth
-  if (paused.value || dragging.value || max <= 1) {
-    autoPos = el.scrollLeft // stay in sync with manual scrolling
+  const w = setWidth()
+  if (dragging.value || interacting.value || w <= 1) {
+    autoPos = wrap(el.scrollLeft, w) // stay in sync with manual scrolling
     return
   }
-  autoPos += autoDir * AUTO_SPEED * dt
-  if (autoPos >= max) { autoPos = max; autoDir = -1 }
-  else if (autoPos <= 0) { autoPos = 0; autoDir = 1 }
+  autoPos = wrap(autoPos + AUTO_SPEED * dt, w)
   el.scrollLeft = autoPos
 }
-
 onMounted(() => {
-  updateTeamArrows()
   const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
   if (!reduced) rafId = requestAnimationFrame(autoTick)
 })
-onBeforeUnmount(() => cancelAnimationFrame(rafId))
+onBeforeUnmount(() => { cancelAnimationFrame(rafId); clearTimeout(interactTimer) })
 
 // Cinematic hero entrance + collage depth-drift on scroll.
 const heroRoot = ref<HTMLElement | null>(null)
@@ -120,7 +132,12 @@ onMounted(() => {
     // [data-anim] { opacity: 0 }`, so `.from` would read 0 as the destination
     // and never reveal them. Explicit `to` states avoid that.
     gsap
-      .timeline({ defaults: { ease: 'power3.out' } })
+      .timeline({
+        defaults: { ease: 'power3.out' },
+        // Replays whenever the hero re-enters view (matches every other section),
+        // and still fires on initial load since the hero starts in view.
+        scrollTrigger: { trigger: heroRoot.value, start: 'top 85%', toggleActions: 'restart reset restart reset' },
+      })
       .fromTo(q('[data-hero=title]'), { yPercent: 45, opacity: 0 }, { yPercent: 0, opacity: 1, duration: 1 }, 0)
       .fromTo(q('[data-hero=sub]'), { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8 }, 0.15)
       .fromTo(q('.hero-cta'), { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, clearProps: 'transform' }, 0.3)
@@ -193,7 +210,7 @@ const faqs: FaqItem[] = [
           class="hero-card group h-[calc(var(--h)*var(--s)*1px)] w-[calc(var(--w)*var(--s)*1px)] shrink-0 overflow-hidden rounded-[2px] bg-white transition-transform duration-300 ease-out hover:-translate-y-1.5"
           :style="{ '--w': img.w, '--h': img.h }"
         >
-          <img :src="img.src" alt="" class="size-full object-cover transition-transform duration-[600ms] ease-out group-hover:scale-110" />
+          <img :src="img.src" alt="Custom branded merchandise by Printplaceng" class="size-full object-cover transition-transform duration-[600ms] ease-out group-hover:scale-110" />
         </div>
       </div>
     </section>
@@ -282,55 +299,53 @@ const faqs: FaqItem[] = [
       <h2 v-words class="mb-8 px-5 text-center text-[28px] font-bold leading-[42px] tracking-[-0.84px] text-neutral-500 md:text-[32px]">
         Our team
       </h2>
-      <!-- draggable carousel; arrows fade in on hover and hide at each extreme -->
-      <div
-        class="group/car relative mx-auto max-w-[1400px]"
-        @pointerenter="paused = true"
-        @pointerleave="paused = false"
-      >
+      <!-- original carousel (hover arrows + hand/drag); the team is rendered twice
+           so the continuous leftward auto-scroll wraps by one set width seamlessly -->
+      <div class="group/car relative mx-auto max-w-[1400px]">
         <div
           ref="teamTrack"
           v-flip.stagger
           class="no-scrollbar flex gap-4 select-none overflow-x-auto px-5 py-3"
           :class="dragging ? 'cursor-grabbing' : 'cursor-grab'"
-          @scroll="updateTeamArrows"
           @pointerdown="onTeamPointerDown"
           @pointermove="onTeamPointerMove"
           @pointerup="onTeamPointerUp"
           @pointercancel="onTeamPointerUp"
         >
-          <div
-            v-for="(m, mi) in team"
-            :key="m.name"
-            class="group w-[260px] shrink-0 rounded-[20px] bg-coral-600 p-2.5 transition-transform duration-300 ease-out hover:-translate-y-2 md:w-[320px]"
-          >
-            <!-- full photo with name overlaid; shape alternates curved-square / oval -->
+          <template v-for="s in 2" :key="s">
             <div
-              class="relative h-[380px] overflow-hidden bg-gradient-to-b from-neutral-50 to-neutral-100 md:h-[444px]"
-              :class="mi % 2 === 0 ? 'rounded-[28px]' : 'rounded-[150px]'"
+              v-for="(m, mi) in team"
+              :key="`${s}-${m.name}`"
+              class="group w-[260px] shrink-0 rounded-[20px] bg-coral-600 p-2.5 transition-transform duration-300 ease-out hover:-translate-y-2 md:w-[320px]"
+              :aria-hidden="s === 2 ? 'true' : undefined"
             >
-              <img
-                :src="m.img"
-                :alt="m.name"
-                :style="{ objectPosition: m.pos, '--z': m.zoom }"
-                draggable="false"
-                class="pointer-events-none absolute inset-0 size-full scale-[var(--z)] object-cover transition-[scale] duration-500 ease-out group-hover:scale-[calc(var(--z)*1.05)]"
-              />
-              <div class="absolute inset-x-0 bottom-0 h-[36%] bg-gradient-to-t from-black/70 via-black/15 to-transparent"></div>
-              <div class="absolute inset-x-0 bottom-5 flex flex-col items-center px-3 text-center text-white">
-                <p class="text-[18px] font-medium leading-6">{{ m.name }}</p>
-                <p class="text-[14px] leading-5 text-white/85">{{ m.role }}</p>
+              <!-- full photo with name overlaid; shape alternates curved-square / oval -->
+              <div
+                class="relative h-[380px] overflow-hidden bg-gradient-to-b from-neutral-50 to-neutral-100 md:h-[444px]"
+                :class="mi % 2 === 0 ? 'rounded-[28px]' : 'rounded-[150px]'"
+              >
+                <img
+                  :src="m.img"
+                  :alt="m.name"
+                  :style="{ objectPosition: m.pos, '--z': m.zoom }"
+                  draggable="false"
+                  class="pointer-events-none absolute inset-0 size-full scale-[var(--z)] object-cover transition-[scale] duration-500 ease-out group-hover:scale-[calc(var(--z)*1.05)]"
+                />
+                <div class="absolute inset-x-0 bottom-0 h-[36%] bg-gradient-to-t from-black/70 via-black/15 to-transparent"></div>
+                <div class="absolute inset-x-0 bottom-5 flex flex-col items-center px-3 text-center text-white">
+                  <p class="text-[18px] font-medium leading-6">{{ m.name }}</p>
+                  <p class="text-[14px] leading-5 text-white/85">{{ m.role }}</p>
+                </div>
               </div>
             </div>
-          </div>
+          </template>
         </div>
 
-        <!-- navigators: fade in on hover, each hides once its end is reached -->
+        <!-- navigators: fade in on hover (always available — the loop is infinite) -->
         <button
           type="button"
           aria-label="Previous team members"
-          :disabled="atStart"
-          class="absolute left-3 top-1/2 z-10 grid size-11 -translate-y-1/2 place-items-center rounded-full bg-white opacity-0 shadow-[2px_4px_6px_rgba(0,0,0,0.15)] transition-opacity duration-300 hover:bg-neutral-50 group-hover/car:opacity-100 disabled:pointer-events-none disabled:!opacity-0 md:left-6"
+          class="absolute left-3 top-1/2 z-10 grid size-11 -translate-y-1/2 place-items-center rounded-full bg-white opacity-0 shadow-[2px_4px_6px_rgba(0,0,0,0.15)] transition-opacity duration-300 hover:bg-neutral-50 group-hover/car:opacity-100 md:left-6"
           @click="scrollTeam(-1)"
         >
           <img src="/icons/arrow-right.svg" alt="" class="size-6 rotate-180" />
@@ -338,8 +353,7 @@ const faqs: FaqItem[] = [
         <button
           type="button"
           aria-label="Next team members"
-          :disabled="atEnd"
-          class="absolute right-3 top-1/2 z-10 grid size-11 -translate-y-1/2 place-items-center rounded-full bg-white opacity-0 shadow-[2px_4px_6px_rgba(0,0,0,0.15)] transition-opacity duration-300 hover:bg-neutral-50 group-hover/car:opacity-100 disabled:pointer-events-none disabled:!opacity-0 md:right-6"
+          class="absolute right-3 top-1/2 z-10 grid size-11 -translate-y-1/2 place-items-center rounded-full bg-white opacity-0 shadow-[2px_4px_6px_rgba(0,0,0,0.15)] transition-opacity duration-300 hover:bg-neutral-50 group-hover/car:opacity-100 md:right-6"
           @click="scrollTeam(1)"
         >
           <img src="/icons/arrow-right.svg" alt="" class="size-6" />
@@ -352,7 +366,7 @@ const faqs: FaqItem[] = [
       <p class="mb-2 text-center text-[18px] font-[450] tracking-[-0.54px] text-neutral-500">
         Brands we have helped show up better
       </p>
-      <p class="mb-8 text-center text-[14px] leading-5 text-neutral-300">
+      <p class="mb-4 text-center text-[14px] leading-5 text-neutral-300 md:mb-8">
         Just a few of the many brands that have trusted our team
       </p>
       <!-- edge-faded, continuously scrolling logo track -->
@@ -364,9 +378,9 @@ const faqs: FaqItem[] = [
             <div
               v-for="(b, i) in brands"
               :key="`${n}-${i}`"
-              class="flex h-[90px] w-[150px] shrink-0 items-center justify-center opacity-80 transition-opacity duration-300 hover:opacity-100"
+              class="flex h-[60px] w-[120px] shrink-0 items-center justify-center opacity-80 transition-opacity duration-300 hover:opacity-100 md:h-[90px] md:w-[150px]"
             >
-              <img :src="b" alt="Brand logo" class="max-h-[70px] max-w-[75%] object-contain" />
+              <img :src="b" alt="Brand logo" class="max-h-[46px] max-w-[75%] object-contain md:max-h-[70px]" />
             </div>
           </template>
         </div>
@@ -390,7 +404,7 @@ const faqs: FaqItem[] = [
               :style="{ '--a': (i * (360 / budgetOrbit.length)) + 'deg' }"
             >
               <div class="orbit-card">
-                <img :src="src" alt="" class="size-full object-cover" draggable="false" />
+                <img :src="src" alt="Branded product sample from Printplaceng" class="size-full object-cover" draggable="false" />
               </div>
             </div>
           </div>
@@ -465,7 +479,8 @@ const faqs: FaqItem[] = [
 .orbit-card {
   width: var(--cw);
   height: var(--ch);
-  border-radius: 14px;
+  /* scale the radius with the card so it isn't over-rounded on mobile (small --s) */
+  border-radius: calc(14px * var(--s));
   overflow: hidden;
   background: #fff;
   box-shadow: 0 22px 45px rgba(0, 0, 0, 0.4);

@@ -262,6 +262,44 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* --- v-liquid: water-like hover for image cards --- */
+/* Caustic light that follows the pointer (driven by --mx/--my from the directive) */
+.liquid-glow {
+  background:
+    radial-gradient(
+      220px circle at var(--mx, 50%) var(--my, 50%),
+      rgba(255, 255, 255, 0.45),
+      rgba(255, 255, 255, 0.12) 35%,
+      transparent 62%
+    );
+  mix-blend-mode: soft-light;
+}
+/* A gentle second layer gives the light a liquid, refractive feel */
+.liquid-glow::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    170px circle at var(--mx, 50%) var(--my, 50%),
+    rgba(255, 100, 55, 0.5),
+    rgba(255, 100, 55, 0.15) 40%,
+    transparent 60%
+  );
+  mix-blend-mode: screen;
+}
+/* Water-drop ripple spawned on pointer-enter */
+.liquid-ripple {
+  position: absolute;
+  width: 26rem;
+  height: 26rem;
+  margin: -13rem 0 0 -13rem;
+  border-radius: 9999px;
+  pointer-events: none;
+  z-index: 20;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.12) 45%, transparent 65%);
+  mix-blend-mode: soft-light;
+}
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }

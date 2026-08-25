@@ -2,7 +2,11 @@
 import type { Bundle } from '~/components/BundleRow.vue'
 import type { Product } from '~/components/ProductCard.vue'
 
-useHead({ title: 'Printplaceng — We’ve handled the hard part.' })
+useSeo({
+  title: 'Merch Bundles & Packages — Printplaceng',
+  description:
+    'Ready-made merch bundles for teams and brands — Team-Tee, New Hire Kit, Rain Ready and Executive Essentials. Branded t-shirts, caps, bottles, totes and more, done for you.',
+})
 
 const bundles: Bundle[] = [
   {
@@ -58,9 +62,8 @@ const bundles: Bundle[] = [
 ]
 
 const products: Product[] = [
-  { image: '/img/products/tshirt.svg', name: 'T-shirt', price: 'N7,000' },
-  { image: '/img/products/facecap.svg', name: 'Face cap', price: 'N4,000' },
-  { image: '/img/products/temperature-bottle.svg', name: 'Temperature bottle', price: 'N4,500' },
+  { image: '/img/products/tshirt.jpg', name: 'T-shirt', price: 'N7,000' },
+  { image: '/img/products/facecap.jpg', name: 'Face cap', price: 'N4,000' },
   { image: '/img/products/thermal.png', name: 'Thermal Bottles', price: 'N7,500' },
   { image: '/img/products/tote.png', name: 'Tote bag', price: 'N5,000' },
   { image: '/img/products/umbrella.png', name: 'Umbrella', price: 'N9,000' },
@@ -69,6 +72,34 @@ const products: Product[] = [
   { image: '/img/products/mug.png', name: 'Coffee mug', price: 'N3,000' },
   { image: '/img/products/ballpen.png', name: 'Ball pen', price: 'N1,200' },
 ]
+
+// Structured data: the bundles as a Product ItemList (helps rich results).
+const { public: { siteUrl } } = useRuntimeConfig()
+const bundleLd = {
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  name: 'Printplaceng merch bundles',
+  itemListElement: bundles
+    .filter((b) => b.type !== 'cta')
+    .map((b, i) => {
+      const amount = /^N[\d,]+$/.test(b.price ?? '') ? (b.price ?? '').replace(/[^\d]/g, '') : null
+      return {
+        '@type': 'ListItem',
+        position: i + 1,
+        item: {
+          '@type': 'Product',
+          name: b.title,
+          description: b.descPrimary,
+          image: `${siteUrl}${b.image}`,
+          brand: { '@type': 'Brand', name: 'Printplaceng' },
+          ...(amount
+            ? { offers: { '@type': 'Offer', priceCurrency: 'NGN', price: amount, availability: 'https://schema.org/InStock', url: `${siteUrl}/contact` } }
+            : {}),
+        },
+      }
+    }),
+}
+useHead({ script: [{ type: 'application/ld+json', innerHTML: JSON.stringify(bundleLd) }] })
 </script>
 
 <template>

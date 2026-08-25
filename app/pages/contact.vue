@@ -1,17 +1,64 @@
 <script setup lang="ts">
 import type { FaqItem } from '~/components/FaqAccordion.vue'
 
-useHead({ title: 'Contact — Printplaceng' })
+useSeo({
+  title: 'Contact Printplaceng — Custom Printing in Lagos',
+  description:
+    'Talk to Printplaceng about your custom merch and print project. Visit our Lagos showroom, chat on WhatsApp, or email hello@printplace.ng for a quote.',
+})
 
-const colA = [
+// Single ordered list (2-col grid, row-major) — drag to re-arrange.
+// Order is interleaved so the initial grid matches the original two-column layout.
+const cards = ref([
   { icon: '/icons/phone.svg', title: 'Talk to our team', value: 'hello@printplace.ng' },
-  { icon: '/icons/linkedin.svg', title: 'Connect on LinkedIn', value: 'Print Place' },
-  { icon: '/icons/map-point.svg', title: 'Visit our showroom', value: '121 Isolo rd, Palm Avenue, Lagos' },
-]
-const colB = [
   { icon: '/icons/instagram.svg', title: 'Follow our work', value: '@printplace' },
+  { icon: '/icons/linkedin.svg', title: 'Connect on LinkedIn', value: 'Print Place' },
   { icon: '/icons/whatsapp.svg', title: 'Chat with us', value: '+234 XXX XXX XXXX' },
-]
+  { icon: '/icons/map-point.svg', title: 'Visit our showroom', value: '121 Isolo rd, Palm Avenue, Lagos' },
+])
+
+// --- drag-to-reorder (native DnD + <TransitionGroup> FLIP shuffle) ---
+const dragIndex = ref<number | null>(null)
+function onDragStart(i: number, e: DragEvent) {
+  dragIndex.value = i
+  if (e.dataTransfer) {
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', String(i)) // Firefox needs a payload to drag
+  }
+}
+function onDragEnter(i: number) {
+  const from = dragIndex.value
+  if (from === null || from === i) return
+  const list = cards.value.slice()
+  const [item] = list.splice(from, 1)
+  list.splice(i, 0, item)
+  cards.value = list
+  dragIndex.value = i // the dragged card now lives at slot i
+}
+function onDragEnd() {
+  dragIndex.value = null
+}
+
+// Auto re-arrange every 2 minutes (skips while a manual drag is in progress).
+// The <TransitionGroup> animates the new order with the same FLIP shuffle.
+let shuffleTimer: ReturnType<typeof setInterval> | null = null
+function shuffleCards() {
+  if (dragIndex.value !== null) return // don't disrupt an active drag
+  const list = cards.value.slice()
+  for (let i = list.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[list[i], list[j]] = [list[j], list[i]]
+  }
+  // guarantee a visible change
+  if (list.every((c, i) => c.title === cards.value[i].title)) list.push(list.shift()!)
+  cards.value = list
+}
+onMounted(() => {
+  shuffleTimer = setInterval(shuffleCards, 120_000)
+})
+onBeforeUnmount(() => {
+  if (shuffleTimer) clearInterval(shuffleTimer)
+})
 
 // Bento gallery cells — positions/sizes as % of the 890×811 Figma frame.
 const gallery = [
@@ -35,6 +82,48 @@ const faqs: FaqItem[] = [
   { q: 'What types of businesses do you work with?', a: 'We work with startups, SMEs, schools, churches, corporate organizations, event planners, and growing brands looking for high-quality print and merchandise solutions.' },
   { q: 'Can I see a sample before production?', a: 'For selected projects, we can provide digital proofs or physical samples so you can approve the design before full production begins.' },
 ]
+
+// Structured data: LocalBusiness (showroom) + FAQPage (from the FAQ list).
+const { public: { siteUrl } } = useRuntimeConfig()
+const businessLd = {
+  '@context': 'https://schema.org',
+  '@type': 'LocalBusiness',
+  '@id': `${siteUrl}/#organization`,
+  name: 'Printplaceng',
+  image: `${siteUrl}/og-image.jpg`,
+  url: siteUrl,
+  email: 'hello@printplace.ng',
+  priceRange: '₦₦',
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: '121 Isolo Road, Palm Avenue',
+    addressLocality: 'Lagos',
+    addressCountry: 'NG',
+  },
+  areaServed: 'NG',
+  sameAs: [
+    'https://www.instagram.com/printplaceng',
+    'https://youtube.com/@theprintplaceteam',
+    'https://www.tiktok.com/@printplaceng',
+    'https://www.linkedin.com/company/printplacengr/',
+    'https://x.com/printplaceng_',
+  ],
+}
+const faqLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map((f) => ({
+    '@type': 'Question',
+    name: f.q,
+    acceptedAnswer: { '@type': 'Answer', text: f.a },
+  })),
+}
+useHead({
+  script: [
+    { type: 'application/ld+json', innerHTML: JSON.stringify(businessLd) },
+    { type: 'application/ld+json', innerHTML: JSON.stringify(faqLd) },
+  ],
+})
 </script>
 
 <template>
@@ -52,38 +141,38 @@ const faqs: FaqItem[] = [
           <AppButton to="/built-for-you" class="mt-2">See packages</AppButton>
         </div>
 
-        <div class="flex w-full flex-col items-stretch gap-4 md:flex-row md:items-start md:justify-center md:gap-5">
-          <div v-anim:up.stagger class="flex flex-1 flex-col gap-4">
-            <div
-              v-for="c in colA"
-              :key="c.title"
-              class="flex items-center gap-4 rounded-2xl border border-gray-500/50 bg-white px-6 py-[19px] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-coral-500/40 hover:shadow-lg"
-            >
-              <span class="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#f0f0ef]">
-                <img :src="c.icon" alt="" class="size-5" />
-              </span>
-              <span class="flex flex-col text-[16px] leading-5">
-                <span class="font-[550] text-neutral-500">{{ c.title }}</span>
-                <span class="font-medium text-neutral-200">{{ c.value }}</span>
-              </span>
-            </div>
+        <!-- drag any card to re-arrange; others shuffle with a FLIP animation -->
+        <TransitionGroup
+          v-anim:up.stagger
+          tag="div"
+          name="card"
+          class="grid w-full grid-cols-1 gap-4 md:grid-cols-2"
+        >
+          <div
+            v-for="(c, i) in cards"
+            :key="c.title"
+            draggable="true"
+            @dragstart="onDragStart(i, $event)"
+            @dragenter.prevent="onDragEnter(i)"
+            @dragover.prevent
+            @drop.prevent
+            @dragend="onDragEnd"
+            class="card-item group relative flex cursor-grab items-center gap-4 overflow-hidden rounded-2xl border border-gray-500/50 bg-white px-6 py-[19px] shadow-sm transition-[border-color,box-shadow,opacity] duration-300 ease-out hover:border-coral-500/40 hover:shadow-xl active:cursor-grabbing"
+            :class="dragIndex === i ? 'opacity-40 ring-2 ring-coral-500/50' : ''"
+          >
+            <!-- coral wash sweeps in from the left on hover -->
+            <span class="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-coral-500/10 to-transparent transition-transform duration-500 ease-out group-hover:translate-x-0"></span>
+            <span class="relative flex size-10 shrink-0 items-center justify-center rounded-full bg-[#f0f0ef] transition-all duration-300 ease-out group-hover:rotate-6 group-hover:scale-110 group-hover:bg-coral-500/15">
+              <img :src="c.icon" alt="" draggable="false" class="size-5 transition-transform duration-300 group-hover:scale-110" />
+            </span>
+            <span class="relative flex flex-col text-[16px] leading-5">
+              <span class="font-[550] text-neutral-500">{{ c.title }}</span>
+              <span class="font-medium text-neutral-200 transition-colors duration-300 group-hover:text-coral-600">{{ c.value }}</span>
+            </span>
+            <!-- drag handle hint -->
+            <span class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[18px] leading-none text-neutral-200 opacity-0 transition-opacity duration-300 group-hover:opacity-70">⠿</span>
           </div>
-          <div v-anim:up.stagger="{ delay: 0.1 }" class="flex flex-1 flex-col gap-4">
-            <div
-              v-for="c in colB"
-              :key="c.title"
-              class="flex items-center gap-4 rounded-2xl border border-gray-500/50 bg-white px-6 py-[19px] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-coral-500/40 hover:shadow-lg"
-            >
-              <span class="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#f0f0ef]">
-                <img :src="c.icon" alt="" class="size-5" />
-              </span>
-              <span class="flex flex-col text-[16px] leading-5">
-                <span class="font-[550] text-neutral-500">{{ c.title }}</span>
-                <span class="font-medium text-neutral-200">{{ c.value }}</span>
-              </span>
-            </div>
-          </div>
-        </div>
+        </TransitionGroup>
       </div>
     </section>
 
@@ -93,12 +182,13 @@ const faqs: FaqItem[] = [
         <h2 v-words class="mb-10 text-center text-[32px] font-bold leading-tight tracking-[-1px] text-white md:text-[46px] md:leading-[52px] md:tracking-[-1.38px]">
           Fresh off the press
         </h2>
-        <!-- desktop bento -->
-        <div v-flip.stagger class="relative mx-auto hidden aspect-[890/811] w-full max-w-[890px] md:block">
+        <!-- desktop bento — each cell has a fluid "water" hover (tilt + caustic + ripple) -->
+        <div v-flip.stagger class="relative mx-auto hidden aspect-[890/811] w-full max-w-[890px] [perspective:1600px] md:block">
           <div
             v-for="(g, i) in gallery"
             :key="i"
-            class="group absolute overflow-hidden transition-transform duration-500 ease-out hover:scale-[1.03]"
+            v-liquid="{ max: 10 }"
+            class="group absolute overflow-hidden"
             :style="{ left: g.l, top: g.t, width: g.w, height: g.h, borderRadius: g.r }"
           >
             <img
@@ -107,6 +197,7 @@ const faqs: FaqItem[] = [
               :style="{ transform: `scale(${g.zoom || 1})`, transformOrigin: g.origin || 'center' }"
               class="size-full object-cover"
             />
+            <div class="liquid-glow pointer-events-none absolute inset-0 z-10 opacity-0 transition-opacity duration-500 group-hover:opacity-100"></div>
           </div>
         </div>
         <!-- mobile grid -->
@@ -136,3 +227,19 @@ const faqs: FaqItem[] = [
     </section>
   </div>
 </template>
+
+<style scoped>
+/* FLIP shuffle: cards glide to their new slots while dragging/reordering */
+.card-move {
+  transition: transform 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+}
+/* the lifted card shouldn't animate its own move (native drag ghost handles it) */
+.card-item:active {
+  transition: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .card-move {
+    transition: none;
+  }
+}
+</style>

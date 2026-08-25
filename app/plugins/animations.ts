@@ -15,6 +15,9 @@
  *   v-parallax="range?"            scrub parallax (yPercent range, default 8)
  *   v-tilt="{max,lift}?"           pointer 3-D tilt + lift (owns the transform)
  *   v-magnetic="strength?"         pointer magnetic pull (for transform-free elements)
+ *   v-liquid="{max}?"              water-like hover: cursor tilt + caustic light
+ *                                  (--mx/--my) + drop ripple; host must be
+ *                                  relative + overflow-hidden with a .liquid-glow child
  */
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
@@ -328,6 +331,68 @@ export default defineNuxtPlugin((nuxtApp) => {
       const h = (el as any)._mag
       if (h) {
         el.removeEventListener('pointermove', h.onMove)
+        el.removeEventListener('pointerleave', h.onLeave)
+      }
+    },
+  })
+
+  // v-liquid — fluid, "water-like" hover for image cards:
+  //   • the card tilts toward the cursor (perspective)
+  //   • a soft caustic light follows the pointer (via --mx/--my CSS vars)
+  //   • a water-drop ripple expands from where the pointer enters
+  // The host must be position:relative + overflow-hidden. Pair with a
+  // `.liquid-glow` overlay that reads --mx/--my (see main.css).
+  app.directive('liquid', {
+    ...noop,
+    mounted(el: HTMLElement, binding) {
+      if (!import.meta.client || isReduced()) return
+      const max = (binding.value?.max ?? 8) as number
+      const lift = (binding.value?.scale ?? 1.04) as number
+      gsap.set(el, { transformPerspective: 1000, '--mx': '50%', '--my': '50%' })
+      const rotX = gsap.quickTo(el, 'rotationX', { duration: 0.6, ease: 'power3' })
+      const rotY = gsap.quickTo(el, 'rotationY', { duration: 0.6, ease: 'power3' })
+      const sTo = gsap.quickTo(el, 'scale', { duration: 0.6, ease: 'power3' })
+      const mxTo = gsap.quickTo(el, '--mx', { duration: 0.5, ease: 'power3', unit: '%' })
+      const myTo = gsap.quickTo(el, '--my', { duration: 0.5, ease: 'power3', unit: '%' })
+
+      const onMove = (e: PointerEvent) => {
+        const r = el.getBoundingClientRect()
+        const px = (e.clientX - r.left) / r.width
+        const py = (e.clientY - r.top) / r.height
+        rotY((px - 0.5) * max * 2)
+        rotX(-(py - 0.5) * max * 2)
+        sTo(lift)
+        mxTo(px * 100)
+        myTo(py * 100)
+      }
+      const ripple = (e: PointerEvent) => {
+        const r = el.getBoundingClientRect()
+        const dot = document.createElement('span')
+        dot.className = 'liquid-ripple'
+        dot.style.left = `${e.clientX - r.left}px`
+        dot.style.top = `${e.clientY - r.top}px`
+        el.appendChild(dot)
+        gsap.fromTo(
+          dot,
+          { scale: 0, opacity: 0.55 },
+          {
+            scale: 1, opacity: 0, duration: 0.9, ease: 'power2.out',
+            onComplete: () => dot.remove(),
+          },
+        )
+      }
+      const onEnter = (e: PointerEvent) => { ripple(e); onMove(e) }
+      const onLeave = () => { rotX(0); rotY(0); sTo(1) }
+      el.addEventListener('pointermove', onMove)
+      el.addEventListener('pointerenter', onEnter)
+      el.addEventListener('pointerleave', onLeave)
+      ;(el as any)._liquid = { onMove, onEnter, onLeave }
+    },
+    unmounted(el: HTMLElement) {
+      const h = (el as any)._liquid
+      if (h) {
+        el.removeEventListener('pointermove', h.onMove)
+        el.removeEventListener('pointerenter', h.onEnter)
         el.removeEventListener('pointerleave', h.onLeave)
       }
     },

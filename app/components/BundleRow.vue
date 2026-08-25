@@ -18,13 +18,17 @@ const isDark = props.bundle.theme === 'dark'
 
 <template>
   <div class="group flex flex-col items-stretch gap-4 md:flex-row md:items-center">
-    <!-- Image -->
-    <div class="relative h-[260px] w-full shrink-0 overflow-hidden rounded-2xl sm:h-[360px] md:h-[551px] md:w-[648px]">
+    <!-- Image — fluid "water" hover: tilt toward cursor, caustic light + drop ripple -->
+    <div
+      v-liquid
+      class="group/img relative h-[260px] w-full shrink-0 overflow-hidden rounded-2xl sm:h-[360px] md:h-[551px] md:w-[648px]"
+    >
       <img
         :src="bundle.image"
         :alt="bundle.alt"
-        class="absolute inset-0 size-full object-cover transition-transform duration-[700ms] ease-out group-hover:scale-[1.04]"
+        class="absolute inset-0 size-full object-cover transition-transform duration-[700ms] ease-out group-hover/img:scale-[1.06]"
       />
+      <div class="liquid-glow pointer-events-none absolute inset-0 z-10 opacity-0 transition-opacity duration-500 group-hover/img:opacity-100"></div>
     </div>
 
     <!-- Content card -->
@@ -64,30 +68,40 @@ const isDark = props.bundle.theme === 'dark'
           </p>
         </div>
 
-        <!-- Bundle button -->
+        <!-- Bundle button — magnetic pull + liquid fill sweep + conveyor arrow -->
         <NuxtLink
           v-if="!isCta"
+          v-magnetic="0.18"
           to="/contact"
-          class="group/btn flex w-full cursor-pointer items-center justify-between rounded-full bg-white py-2 pl-6 pr-2.5 text-left transition-shadow duration-300 hover:shadow-lg"
+          class="group/btn relative isolate flex w-full cursor-pointer items-center justify-between overflow-hidden rounded-full bg-white py-2 pl-6 pr-2.5 text-left transition-shadow duration-300 hover:shadow-lg"
         >
-          <span class="text-[18px] font-bold leading-6 text-neutral-500">Let’s talk more</span>
+          <!-- fill grows out from the arrow to flood the pill -->
           <span
-            class="flex size-8 items-center justify-center rounded-full text-white transition-transform duration-300 group-hover/btn:translate-x-1"
+            class="pointer-events-none absolute right-2.5 top-1/2 -z-10 aspect-square w-8 -translate-y-1/2 rounded-full transition-transform duration-500 ease-[cubic-bezier(0.7,0,0.2,1)] group-hover/btn:scale-[24]"
+            :class="isDark ? 'bg-coral-500' : 'bg-neutral-500'"
+          ></span>
+          <span class="text-[18px] font-bold leading-6 text-neutral-500 transition-colors duration-300 group-hover/btn:text-white">Let’s talk more</span>
+          <span
+            class="relative flex size-8 items-center justify-center overflow-hidden rounded-full text-white transition-colors duration-300 group-hover/btn:bg-white group-hover/btn:text-neutral-500"
             :class="isDark ? 'bg-coral-500' : 'bg-neutral-500'"
           >
-            <IconArrowRight class="size-4" />
+            <IconArrowRight class="size-4 transition-transform duration-500 ease-out group-hover/btn:translate-x-7" />
+            <IconArrowRight class="absolute size-4 -translate-x-7 transition-transform duration-500 ease-out group-hover/btn:translate-x-0" />
           </span>
         </NuxtLink>
 
-        <!-- CTA button -->
+        <!-- CTA button — same treatment, inverted (dark floods the coral pill) -->
         <NuxtLink
           v-else
+          v-magnetic="0.18"
           to="/contact"
-          class="group/btn flex w-full cursor-pointer items-center justify-between rounded-[24px] bg-coral-500 py-1.5 pl-4 pr-1.5 transition-colors duration-300 hover:bg-coral-700"
+          class="group/btn relative isolate flex w-full cursor-pointer items-center justify-between overflow-hidden rounded-[24px] bg-coral-500 py-1.5 pl-4 pr-1.5"
         >
+          <span class="pointer-events-none absolute right-1.5 top-1/2 -z-10 aspect-square w-8 -translate-y-1/2 rounded-full bg-neutral-500 transition-transform duration-500 ease-[cubic-bezier(0.7,0,0.2,1)] group-hover/btn:scale-[24]"></span>
           <span class="text-[16px] font-semibold leading-6 text-white">{{ bundle.cta }}</span>
-          <span class="flex size-8 items-center justify-center rounded-full bg-white text-neutral-500 transition-transform duration-300 group-hover/btn:translate-x-1">
-            <IconArrowRight class="size-4" />
+          <span class="relative flex size-8 items-center justify-center overflow-hidden rounded-full bg-white text-neutral-500">
+            <IconArrowRight class="size-4 transition-transform duration-500 ease-out group-hover/btn:translate-x-7" />
+            <IconArrowRight class="absolute size-4 -translate-x-7 transition-transform duration-500 ease-out group-hover/btn:translate-x-0" />
           </span>
         </NuxtLink>
       </div>
