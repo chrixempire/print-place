@@ -10,8 +10,8 @@ useSeo({
 
 const bundles: Bundle[] = [
   {
-    image: '/img/bundle-team-tee.png',
-    alt: 'Team-Tee bundle — branded t-shirts',
+    image: '/img/bundle-interdab.jpg',
+    alt: 'INTERDAB branded t-shirts in white, grey and black',
     theme: 'dark',
     price: 'N80,000',
     title: 'Team-Tee Bundle',
@@ -20,8 +20,8 @@ const bundles: Bundle[] = [
       'This package comes with a free mock up design, 10 100% cotton tshirts branded in any color and size of choice.',
   },
   {
-    image: '/img/bundle-new-hire.png',
-    alt: 'New Hire kit — branded merch set',
+    image: '/img/bundle-matrix.jpg',
+    alt: 'Matrix branded merch set — box, cap, tee, tote and bottle',
     theme: 'light',
     price: 'N30,000',
     title: 'New Hire Kit',
@@ -31,8 +31,8 @@ const bundles: Bundle[] = [
       'Branded box, tee, baseball cap, canvas tote bag, thermal bottle, and a personalized welcome card.',
   },
   {
-    image: '/img/bundle-rain-ready.png',
-    alt: 'Rain Ready kit — hoodie, umbrella, mug',
+    image: '/img/bundle-itel.jpg',
+    alt: 'itel branded hoodie, umbrella and mug in red',
     theme: 'light',
     price: 'N350,000',
     title: 'Rain Ready Kit',
@@ -41,8 +41,8 @@ const bundles: Bundle[] = [
       '10 canopy-crafted umbrellas, 10 100% cotton hoodies and 10 microwave-safe ceramic coffee mug',
   },
   {
-    image: '/img/bundle-executive.png',
-    alt: 'Executive Essentials — leather kit',
+    image: '/img/bundle-parthian.jpg',
+    alt: 'PARTHIAN executive leather gift set — journal, pen, bottle and keyholder',
     theme: 'light',
     price: '20k/box',
     title: 'Executive Essentials',
@@ -51,8 +51,8 @@ const bundles: Bundle[] = [
       'Sturdy leather journal, ball pen, temperature bottle, dome keyholder, crafted to fit box, all branded',
   },
   {
-    image: '/img/bundle-brief.png',
-    alt: 'Custom merch — share your brief',
+    image: '/img/bundle-korapay.jpg',
+    alt: 'korapay branded merch — hoodie, polo, cap, box and tote',
     theme: 'light',
     type: 'cta',
     title: 'Got something in mind?',

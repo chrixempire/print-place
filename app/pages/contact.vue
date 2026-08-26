@@ -60,15 +60,94 @@ onBeforeUnmount(() => {
   if (shuffleTimer) clearInterval(shuffleTimer)
 })
 
-// Bento gallery cells — positions/sizes as % of the 890×811 Figma frame.
-const gallery = [
-  { src: '/img/contact/g1.png', l: '0.22%', t: '0%', w: '44.83%', h: '54.13%', r: '20px' },
-  { src: '/img/contact/g2.png', l: '49.55%', t: '0%', w: '46.63%', h: '26.51%', r: '20px' },
-  { src: '/img/contact/g6.png', l: '49.55%', t: '28.98%', w: '49.55%', h: '28.11%', r: '110px' },
-  { src: '/img/contact/g3.png', l: '0%', t: '56.60%', w: '30.00%', h: '41.31%', r: '20px' },
-  { src: '/img/contact/g5.png', l: '34.61%', t: '58.69%', w: '30.34%', h: '31.07%', r: '60px', zoom: 1.85, origin: 'top' },
-  { src: '/img/contact/g4.png', l: '69.55%', t: '59.56%', w: '30.45%', h: '31.07%', r: '24px' },
+// "Fresh off the press" — pixel-perfect bento (Figma 18491:464068).
+// pressCells: fixed geometry (as % of the 890×811 frame) for the 6 desktop cells.
+// The cells stay put; only the image inside each swaps, so images "move" cells.
+const pressCells = [
+  { l: '0.22%',  t: '0%',     w: '44.83%', h: '54.13%', r: '20px' },  // big top-left
+  { l: '49.55%', t: '0%',     w: '46.63%', h: '26.51%', r: '20px' },  // wide top-right
+  { l: '49.55%', t: '28.97%', w: '49.55%', h: '28.11%', r: '110px' }, // pill mid-right
+  { l: '0%',     t: '56.60%', w: '30.00%', h: '41.31%', r: '20px' },  // tall bottom-left
+  { l: '34.61%', t: '58.69%', w: '30.34%', h: '31.07%', r: '60px' },  // rounded bottom-mid
+  { l: '69.55%', t: '59.56%', w: '30.45%', h: '31.07%', r: '24px' },  // bottom-right
 ]
+// First 6 = the exact Figma arrangement (in cell order); the gallery photos join
+// the pool so they rotate into the cells over time.
+const pressPool = [
+  { src: '/img/contact/g1.png' },          // ICHAD journals
+  { src: '/img/contact/g2.png' },          // studio / press machines
+  { src: '/img/contact/g6.png' },          // desk + blinds
+  { src: '/img/contact/g3.png' },          // branded pens
+  { src: '/img/contact/team-group.jpg' },  // team group (DSC09557)
+  { src: '/img/contact/g4.png' },          // workshop
+  { src: '/img/gallery/gallery-1.jpg' },
+  { src: '/img/gallery/gallery-2.jpg' },
+  { src: '/img/gallery/gallery-3.jpg' },
+  { src: '/img/gallery/gallery-4.jpg' },
+]
+const pressSlots = ref(pressPool.slice(0, 6)) // initial paint = pixel-perfect Figma
+const pressRoot = ref<HTMLElement | null>(null)
+// Mobile marquee — all images, doubled for a seamless right→left loop.
+const pressMarqueeLoop = [...pressPool, ...pressPool]
+const pressTrack = ref<HTMLElement | null>(null)
+const PRESS_MARQUEE_SPEED = 60 // px / second
+let pressTimer: ReturnType<typeof setInterval> | null = null
+let pressTween: any = null
+let pressResizeT: ReturnType<typeof setTimeout>
+
+function shufflePool<T>(a: T[]): T[] {
+  const arr = a.slice()
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[arr[i], arr[j]] = [arr[j], arr[i]]
+  }
+  return arr
+}
+
+// Desktop: fade the cells out, reshuffle which images fill them, fade back in.
+function shufflePress() {
+  const { gsap, reduced } = useGsap()
+  let next = shufflePool(pressPool).slice(0, 6)
+  while (next.every((p, i) => p.src === pressSlots.value[i].src)) next = shufflePool(pressPool).slice(0, 6)
+  const tiles = pressRoot.value?.querySelectorAll('.press-tile')
+  if (reduced || !tiles?.length) { pressSlots.value = next; return }
+  gsap
+    .timeline()
+    .to(tiles, { autoAlpha: 0, duration: 0.5, ease: 'power2.in', stagger: { each: 0.05, from: 'random' } })
+    .add(() => { pressSlots.value = next }) // swap sources while hidden
+    .to(tiles, { autoAlpha: 1, duration: 0.6, ease: 'power2.out', stagger: { each: 0.06, from: 'random' } }, '+=0.08')
+}
+
+// Mobile: seamless right→left flow of the doubled strip.
+function buildPressMarquee() {
+  const { gsap } = useGsap()
+  const track = pressTrack.value
+  if (!track || track.children.length <= pressPool.length) return
+  pressTween?.kill()
+  gsap.set(track, { x: 0 })
+  const loopDist =
+    (track.children[pressPool.length] as HTMLElement).offsetLeft - (track.children[0] as HTMLElement).offsetLeft
+  if (loopDist <= 0) return
+  pressTween = gsap.to(track, { x: -loopDist, duration: loopDist / PRESS_MARQUEE_SPEED, ease: 'none', repeat: -1 })
+}
+
+// Desktop shuffles every 2 min; mobile scrolls. Pick the right one per breakpoint.
+function setupPress() {
+  const { reduced } = useGsap()
+  if (pressTimer) { clearInterval(pressTimer); pressTimer = null }
+  pressTween?.kill(); pressTween = null
+  if (reduced) return
+  if (window.matchMedia('(max-width: 767px)').matches) buildPressMarquee()
+  else pressTimer = setInterval(shufflePress, 120_000)
+}
+function onPressResize() { clearTimeout(pressResizeT); pressResizeT = setTimeout(setupPress, 200) }
+onMounted(() => { setupPress(); window.addEventListener('resize', onPressResize) })
+onBeforeUnmount(() => {
+  if (pressTimer) clearInterval(pressTimer)
+  pressTween?.kill()
+  clearTimeout(pressResizeT)
+  window.removeEventListener('resize', onPressResize)
+})
 
 const faqs: FaqItem[] = [
   { q: 'What products can Print Place customize?', a: 'We print on a wide range of products including T-shirts, hoodies, tote bags, mugs, pens, notebooks, caps, bottles, business cards, flyers, brochures, posters, packaging, and more. If you have a custom request, we’d love to hear about it.' },
@@ -182,33 +261,34 @@ useHead({
         <h2 v-words class="mb-10 text-center text-[32px] font-bold leading-tight tracking-[-1px] text-white md:text-[46px] md:leading-[52px] md:tracking-[-1.38px]">
           Fresh off the press
         </h2>
-        <!-- desktop bento — each cell has a fluid "water" hover (tilt + caustic + ripple) -->
-        <div v-flip.stagger class="relative mx-auto hidden aspect-[890/811] w-full max-w-[890px] [perspective:1600px] md:block">
+        <!-- desktop bento — pixel-perfect Figma; images reshuffle across cells every 2 min -->
+        <div
+          v-anim:up="120"
+          ref="pressRoot"
+          class="relative mx-auto hidden aspect-[890/811] w-full max-w-[890px] [perspective:1600px] md:block"
+        >
           <div
-            v-for="(g, i) in gallery"
+            v-for="(g, i) in pressSlots"
             :key="i"
             v-liquid="{ max: 10 }"
-            class="group absolute overflow-hidden"
-            :style="{ left: g.l, top: g.t, width: g.w, height: g.h, borderRadius: g.r }"
+            class="press-tile group absolute overflow-hidden bg-white"
+            :style="{ left: pressCells[i].l, top: pressCells[i].t, width: pressCells[i].w, height: pressCells[i].h, borderRadius: pressCells[i].r }"
           >
-            <img
-              :src="g.src"
-              alt="Printplace work"
-              :style="{ transform: `scale(${g.zoom || 1})`, transformOrigin: g.origin || 'center' }"
-              class="size-full object-cover"
-            />
+            <img :src="g.src" alt="Printplace work" class="size-full object-cover" />
             <div class="liquid-glow pointer-events-none absolute inset-0 z-10 opacity-0 transition-opacity duration-500 group-hover:opacity-100"></div>
           </div>
         </div>
-        <!-- mobile grid -->
-        <div class="grid grid-cols-2 gap-3 md:hidden">
-          <div v-for="(g, i) in gallery" :key="i" class="h-40 overflow-hidden rounded-2xl">
-            <img
-              :src="g.src"
-              alt="Printplace work"
-              :style="{ transform: `scale(${g.zoom || 1})`, transformOrigin: g.origin || 'center' }"
-              class="size-full object-cover"
-            />
+        <!-- mobile — all images scroll left in a seamless marquee -->
+        <div class="overflow-hidden md:hidden [mask-image:linear-gradient(to_right,transparent,black_6%,black_94%,transparent)]">
+          <div ref="pressTrack" class="flex w-max items-stretch gap-3 will-change-transform">
+            <div
+              v-for="(g, i) in pressMarqueeLoop"
+              :key="i"
+              :aria-hidden="i >= pressPool.length ? 'true' : undefined"
+              class="h-[220px] w-[165px] shrink-0 overflow-hidden rounded-2xl bg-white"
+            >
+              <img :src="g.src" alt="Printplace work" class="size-full object-cover" />
+            </div>
           </div>
         </div>
       </div>

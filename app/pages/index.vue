@@ -7,15 +7,32 @@ useSeo({
     'Printplaceng is Lagos’ custom merch and branding partner — premium branded t-shirts, mugs, tote bags, packaging and print, delivered with structure and speed. Get a quote today.',
 })
 
-const heroCollage = [
+// Hero collage marquee. Two groups of three small product shots alternate, each
+// followed by a big (portrait-cropped) gallery photo — A, g1, B, g2, A, g3, B, g4
+// — then the whole strip loops seamlessly to the left (see buildCollageLoop).
+type CollageCard = { src: string; w: number; h: number; big?: boolean }
+const smallA: CollageCard[] = [
   { src: '/img/about/hero/h1.png', w: 194, h: 248 },
   { src: '/img/about/hero/h2.png', w: 194, h: 338 },
   { src: '/img/about/hero/h3.png', w: 231, h: 286 },
-  { src: '/img/about/hero/h4.png', w: 374, h: 437 },
+]
+const smallB: CollageCard[] = [
   { src: '/img/about/hero/h5.png', w: 181, h: 228 },
   { src: '/img/about/hero/h6.png', w: 188, h: 266 },
   { src: '/img/about/hero/h7.png', w: 151, h: 173 },
 ]
+// Width matches the gallery photos' 3:2 ratio at h=437 so the full image shows
+// (no crop); small cards keep their own widths.
+const bigGallery = (n: number): CollageCard => ({ src: `/img/gallery/gallery-${n}.jpg`, w: 656, h: 437, big: true })
+const heroCollage = [
+  ...smallA, bigGallery(1),
+  ...smallB, bigGallery(2),
+  ...smallA, bigGallery(3),
+  ...smallB, bigGallery(4),
+]
+// Rendered twice while the marquee is active so the loop has an identical second
+// copy to wrap into with no visible seam.
+const heroLoop = computed(() => (marquee.value ? [...heroCollage, ...heroCollage] : heroCollage))
 
 const features = [
   { icon: '/icons/f-structure.svg', title: 'Structured Process', desc: 'From discovery to delivery, everything is organized' },
@@ -123,9 +140,73 @@ onBeforeUnmount(() => { cancelAnimationFrame(rafId); clearTimeout(interactTimer)
 // Cinematic hero entrance + collage depth-drift on scroll.
 const heroRoot = ref<HTMLElement | null>(null)
 let heroCtx: any = null
-onMounted(() => {
+
+// Hero collage marquee — a seamless, continuous right→left "flow" driven by GSAP,
+// inside a fixed-width window (the width the row had with the original 7 images).
+// Two layers of GSAP animation:
+//   1. a translate tween that slides the (doubled) track one copy-width forever,
+//      so the wrap point is invisible;
+//   2. a per-frame travelling sine wave (via gsap.ticker) that gently bobs each
+//      card up/down based on its live position — the "flowing like water" feel.
+// Hover ramps the translate's timeScale to 0 (a soft slow-to-stop); the ripple
+// keeps breathing so the water never looks frozen.
+const collageTrack = ref<HTMLElement | null>(null)
+const marquee = ref(false)
+const COLLAGE_SPEED = 55 // px / second
+const WAVE_AMP = 9 // px of vertical bob
+const WAVE_FREQ = 0.0055 // radians per px along the track
+const WAVE_DRIFT = 1.3 // radians per second the wave travels
+let collageTween: any = null
+let collageWave: ((t: number) => void) | null = null
+let wavePhase = 0
+let collageResizeT: ReturnType<typeof setTimeout>
+
+const buildCollageLoop = () => {
+  const { gsap } = useGsap()
+  const track = collageTrack.value
+  if (!track || track.children.length <= heroCollage.length) return
+  collageTween?.kill()
+  if (collageWave) gsap.ticker.remove(collageWave)
+  gsap.set(track, { x: 0 })
+  const cards = Array.from(track.children) as HTMLElement[]
+  // Distance from the first card to its duplicate = one full copy (incl. gaps).
+  const loopDist =
+    (track.children[heroCollage.length] as HTMLElement).offsetLeft -
+    (track.children[0] as HTMLElement).offsetLeft
+  if (loopDist <= 0) return
+  // 1) Slide from 0 to one copy left → content moves right→left; wraps seamlessly.
+  collageTween = gsap.to(track, {
+    x: -loopDist,
+    duration: loopDist / COLLAGE_SPEED,
+    ease: 'none',
+    repeat: -1,
+  })
+  // 2) Travelling wave: y = amp·sin(cardX·freq + phase), recomputed each frame
+  // from the card's live on-screen x, so the ripple flows with the scroll.
+  collageWave = () => {
+    wavePhase += gsap.ticker.deltaRatio(60) / 60 * WAVE_DRIFT
+    const tx = gsap.getProperty(track, 'x') as number
+    for (const c of cards) {
+      const cx = c.offsetLeft + tx
+      gsap.set(c, { y: Math.sin(cx * WAVE_FREQ + wavePhase) * WAVE_AMP })
+    }
+  }
+  gsap.ticker.add(collageWave)
+}
+const pauseCollage = () =>
+  collageTween && useGsap().gsap.to(collageTween, { timeScale: 0, duration: 0.6, ease: 'power2.out', overwrite: true })
+const resumeCollage = () =>
+  collageTween && useGsap().gsap.to(collageTween, { timeScale: 1, duration: 0.9, ease: 'power2.in', overwrite: true })
+const onCollageResize = () => {
+  clearTimeout(collageResizeT)
+  collageResizeT = setTimeout(buildCollageLoop, 200)
+}
+
+onMounted(async () => {
   const { gsap, reduced } = useGsap()
   if (reduced || !heroRoot.value) return
+  marquee.value = true // render the duplicate copy, then measure + loop it
+  await nextTick()
   heroCtx = gsap.context((self: any) => {
     const q = self.selector
     // fromTo (not from): these elements are pre-hidden via `.anim-ready
@@ -141,20 +222,24 @@ onMounted(() => {
       .fromTo(q('[data-hero=title]'), { yPercent: 45, opacity: 0 }, { yPercent: 0, opacity: 1, duration: 1 }, 0)
       .fromTo(q('[data-hero=sub]'), { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8 }, 0.15)
       .fromTo(q('.hero-cta'), { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, clearProps: 'transform' }, 0.3)
-      .fromTo(
-        q('.hero-card'),
-        { yPercent: 60, opacity: 0, scale: 0.8 },
-        { yPercent: 0, opacity: 1, scale: 1, duration: 0.85, stagger: 0.09, ease: 'back.out(1.6)', clearProps: 'transform' },
-        0.3,
-      )
+      // The collage fades/rises in as one block; the flow itself carries the cards.
+      .fromTo(q('.hero-collage'), { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.9 }, 0.3)
     gsap.to(q('.hero-collage'), {
       yPercent: -6,
       ease: 'none',
       scrollTrigger: { trigger: heroRoot.value, start: 'top top', end: 'bottom top', scrub: true },
     })
   }, heroRoot.value)
+  buildCollageLoop()
+  window.addEventListener('resize', onCollageResize)
 })
-onBeforeUnmount(() => heroCtx?.revert())
+onBeforeUnmount(() => {
+  heroCtx?.revert()
+  collageTween?.kill()
+  if (collageWave) useGsap().gsap.ticker.remove(collageWave)
+  clearTimeout(collageResizeT)
+  window.removeEventListener('resize', onCollageResize)
+})
 
 const brands = [
   '/img/about/brands/b1.png', '/img/about/brands/b2.png', '/img/about/brands/itel.png',
@@ -201,16 +286,36 @@ const faqs: FaqItem[] = [
         <AppButton to="/contact" class="mt-2 hero-cta" data-anim>Chat with us</AppButton>
       </div>
 
-      <!-- staggered collage -->
-      <div class="hero-collage mt-12 flex items-end justify-start gap-3 overflow-x-auto pb-0 [--s:0.6] md:mt-16 md:justify-center md:gap-5 md:overflow-hidden md:[--s:1] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <!-- staggered collage — seamless GSAP marquee, flows right→left, pauses on hover -->
+      <div
+        data-anim
+        class="hero-collage relative mx-auto mt-12 w-full max-w-[1633px] pb-0 [--s:0.6] md:mt-16 md:[--s:1]"
+        :class="marquee
+          ? 'overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_5%,black_95%,transparent)]'
+          : 'overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'"
+        @mouseenter="pauseCollage"
+        @mouseleave="resumeCollage"
+        @touchstart.passive="pauseCollage"
+        @touchend.passive="resumeCollage"
+      >
         <div
-          v-for="(img, i) in heroCollage"
-          :key="i"
-          data-anim
-          class="hero-card group h-[calc(var(--h)*var(--s)*1px)] w-[calc(var(--w)*var(--s)*1px)] shrink-0 overflow-hidden rounded-[2px] bg-white transition-transform duration-300 ease-out hover:-translate-y-1.5"
-          :style="{ '--w': img.w, '--h': img.h }"
+          ref="collageTrack"
+          class="flex w-max items-end gap-3 md:gap-5"
+          :class="marquee ? 'will-change-transform' : 'justify-start'"
         >
-          <img :src="img.src" alt="Custom branded merchandise by Printplaceng" class="size-full object-cover transition-transform duration-[600ms] ease-out group-hover:scale-110" />
+          <div
+            v-for="(img, i) in heroLoop"
+            :key="i"
+            :aria-hidden="i >= heroCollage.length ? 'true' : undefined"
+            class="hero-card group h-[calc(var(--h)*var(--s)*1px)] w-[calc(var(--w)*var(--s)*1px)] shrink-0 overflow-hidden rounded-[2px] bg-white"
+            :style="{ '--w': img.w, '--h': img.h }"
+          >
+            <img
+              :src="img.src"
+              :alt="img.big ? 'Printplaceng brand campaign' : 'Custom branded merchandise by Printplaceng'"
+              class="size-full object-cover transition-transform duration-[600ms] ease-out group-hover:scale-110"
+            />
+          </div>
         </div>
       </div>
     </section>
