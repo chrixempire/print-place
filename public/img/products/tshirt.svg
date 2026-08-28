@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 521" fill="none">
+  <rect width="352" height="521" fill="#e2e2df"/>
+  <g stroke="#a5a4a2" stroke-width="7" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M132 150 L156 132 H196 L220 150 L250 176 L228 202 L212 188 V318 H140 V188 L124 202 L102 176 Z"/>
+  </g>
+  <text x="176" y="388" text-anchor="middle" font-family="system-ui, sans-serif" font-size="30" font-weight="700" fill="#302f30">T-shirt</text>
+  <text x="176" y="416" text-anchor="middle" font-family="system-ui, sans-serif" font-size="15" fill="#7c7b7a">Photo coming soon</text>
+</svg>

@@ -1,1 +1,334 @@
 @import "tailwindcss";
+
+/* ------------------------------------------------------------------ *
+ * Fonts — Aspekta (self-hosted). Files live in /public/fonts.
+ * ------------------------------------------------------------------ */
+/* Single variable face covers every weight the design uses (incl. 450). */
+@font-face {
+  font-family: "Aspekta";
+  src: url("/fonts/aspekta/AspektaVF.woff2") format("woff2-variations");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ------------------------------------------------------------------ *
+ * Design tokens — sourced from the GoSource Figma color board.
+ * Each scale runs 50 (lightest) → 950 (darkest); 500 is the Figma "Base".
+ * Tailwind v4 turns these into utilities: bg-primary-500, text-neutral-500…
+ * ------------------------------------------------------------------ */
+@theme {
+  /* Fonts */
+  --font-sans: "Aspekta", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Aspekta", ui-sans-serif, system-ui, sans-serif;
+
+  /* Primary — orange (brand) */
+  --color-primary-50: #fedccc;
+  --color-primary-100: #fec5aa;
+  --color-primary-200: #fea880;
+  --color-primary-300: #fd8a55;
+  --color-primary-400: #fd6d2a;
+  --color-primary-500: #fc5000;
+  --color-primary-600: #d24300;
+  --color-primary-700: #a83500;
+  --color-primary-800: #7e2800;
+  --color-primary-900: #541b00;
+  --color-primary-950: #321000;
+
+  /* Coral — red/tomato */
+  --color-coral-50: #ffdcd4;
+  --color-coral-100: #ffc4b8;
+  --color-coral-200: #ffa794;
+  --color-coral-300: #ff8a70;
+  --color-coral-400: #ff6c4d;
+  --color-coral-500: #ff4f29;
+  --color-coral-600: #d54222;
+  --color-coral-700: #aa351b;
+  --color-coral-800: #802815;
+  --color-coral-900: #551a0e;
+  --color-coral-950: #331008;
+
+  /* Peach — warm light → taupe */
+  --color-peach-50: #fff8f5;
+  --color-peach-100: #fff3ef;
+  --color-peach-200: #ffeee7;
+  --color-peach-300: #ffe8de;
+  --color-peach-400: #ffe2d6;
+  --color-peach-500: #ffdcce;
+  --color-peach-600: #d5b7ac;
+  --color-peach-700: #aa9389;
+  --color-peach-800: #806e67;
+  --color-peach-900: #554945;
+  --color-peach-950: #332c29;
+
+  /* Blue */
+  --color-blue-50: #ccccfc;
+  --color-blue-100: #aaaaf9;
+  --color-blue-200: #8080f7;
+  --color-blue-300: #5555f4;
+  --color-blue-400: #2a2af1;
+  --color-blue-500: #0000ee;
+  --color-blue-600: #0000c6;
+  --color-blue-700: #00009f;
+  --color-blue-800: #000077;
+  --color-blue-900: #00004f;
+  --color-blue-950: #000030;
+
+  /* Indigo — periwinkle */
+  --color-indigo-50: #dcdbfb;
+  --color-indigo-100: #c5c3f8;
+  --color-indigo-200: #a9a5f4;
+  --color-indigo-300: #8c86f0;
+  --color-indigo-400: #6f68ed;
+  --color-indigo-500: #524ae9;
+  --color-indigo-600: #443ec2;
+  --color-indigo-700: #37319b;
+  --color-indigo-800: #292575;
+  --color-indigo-900: #1b194e;
+  --color-indigo-950: #100f2f;
+
+  /* Yellow */
+  --color-yellow-50: #fdfce8;
+  --color-yellow-100: #fcfbd9;
+  --color-yellow-200: #faf9c7;
+  --color-yellow-300: #f8f6b4;
+  --color-yellow-400: #f7f4a1;
+  --color-yellow-500: #f5f28e;
+  --color-yellow-600: #ccca76;
+  --color-yellow-700: #a3a15f;
+  --color-yellow-800: #7b7947;
+  --color-yellow-900: #52512f;
+  --color-yellow-950: #31301c;
+
+  /* Pink — magenta */
+  --color-pink-50: #fff3fe;
+  --color-pink-100: #ffecfe;
+  --color-pink-200: #ffe2fd;
+  --color-pink-300: #fed8fc;
+  --color-pink-400: #fecffc;
+  --color-pink-500: #fec5fb;
+  --color-pink-600: #d4a4d1;
+  --color-pink-700: #a983a7;
+  --color-pink-800: #7f637e;
+  --color-pink-900: #554254;
+  --color-pink-950: #332732;
+
+  /* Neutral — grayscale to pure black (primary text/UI ink) */
+  --color-neutral-50: #cdcdcd;
+  --color-neutral-100: #acacac;
+  --color-neutral-200: #838383;
+  --color-neutral-300: #5a595a;
+  --color-neutral-400: #302f30;
+  --color-neutral-500: #070607;
+  --color-neutral-600: #060506;
+  --color-neutral-700: #050405;
+  --color-neutral-800: #040304;
+  --color-neutral-900: #020202;
+  --color-neutral-950: #010101;
+
+  /* Gray — cool neutral */
+  --color-gray-50: #f9f9f9;
+  --color-gray-100: #f5f5f4;
+  --color-gray-200: #f1f1ef;
+  --color-gray-300: #ececea;
+  --color-gray-400: #e7e7e4;
+  --color-gray-500: #e2e2df;
+  --color-gray-600: #bcbcba;
+  --color-gray-700: #979795;
+  --color-gray-800: #7c7b7a;
+  --color-gray-900: #4b4b4a;
+  --color-gray-950: #2d2d2d;
+
+  /* Stone — warm neutral */
+  --color-stone-50: #fdfdfd;
+  --color-stone-100: #fcfcfb;
+  --color-stone-200: #fbfbf9;
+  --color-stone-300: #faf9f7;
+  --color-stone-400: #f8f8f5;
+  --color-stone-500: #f7f6f3;
+  --color-stone-600: #cecdcb;
+  --color-stone-700: #a5a4a2;
+  --color-stone-800: #7c7b7a;
+  --color-stone-900: #525251;
+  --color-stone-950: #313131;
+
+  /* Semantic aliases */
+  --color-brand: var(--color-primary-500);
+  --color-ink: var(--color-neutral-500);
+  --color-paper: #ffffff;
+}
+
+/* ------------------------------------------------------------------ *
+ * Base
+ * ------------------------------------------------------------------ */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-paper);
+  color: var(--color-neutral-500);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ------------------------------------------------------------------ *
+ * GSAP animations (see app/plugins/animations.ts)
+ * `anim-ready` is added to <html> by the plugin (only when motion is
+ * allowed) so elements waiting to animate are hidden until GSAP takes
+ * over — no flash. No-JS / reduced-motion users never get the class,
+ * so they always see full content.
+ * ------------------------------------------------------------------ */
+.anim-ready [data-anim] {
+  opacity: 0;
+}
+/* Curtain wipe (v-curtain) — pre-hidden until GSAP reveals it */
+.anim-ready [data-curtain] {
+  clip-path: inset(0 0 100% 0);
+}
+
+/* Trailing cursor ring (see app/components/AppCursor.vue) — desktop + motion only */
+.app-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 200;
+  width: 34px;
+  height: 34px;
+  border-radius: 9999px;
+  border: 1.5px solid rgba(255, 79, 41, 0.55);
+  pointer-events: none;
+  opacity: 0;
+  will-change: transform;
+}
+@media (pointer: coarse) {
+  .app-cursor {
+    display: none;
+  }
+}
+
+/* Route transitions (Nuxt app.pageTransition = "page") */
+.page-enter-active,
+.page-leave-active {
+  transition:
+    opacity 0.35s ease,
+    transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(24px);
+}
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(-14px);
+}
+
+/* Thin scroll-progress bar (see app/layouts/default.vue) */
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 100;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, var(--color-coral-500), var(--color-primary-500));
+  pointer-events: none;
+}
+
+/* Continuous, non-stop right→left marquee (brands strip + carousels) */
+.auto-scroll {
+  animation: auto-scroll linear infinite;
+}
+/* Pause when the pointer is anywhere over the marquee's viewport */
+.pause-hover:hover .auto-scroll,
+.auto-scroll.pause-hover:hover {
+  animation-play-state: paused;
+}
+@keyframes auto-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    /* one full set width; the track holds two identical sets */
+    transform: translateX(-50%);
+  }
+}
+
+/* Hide the scrollbar on drag-scroll carousels (still scrollable) */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* --- v-liquid: water-like hover for image cards --- */
+/* Caustic light that follows the pointer (driven by --mx/--my from the directive) */
+.liquid-glow {
+  background:
+    radial-gradient(
+      220px circle at var(--mx, 50%) var(--my, 50%),
+      rgba(255, 255, 255, 0.45),
+      rgba(255, 255, 255, 0.12) 35%,
+      transparent 62%
+    );
+  mix-blend-mode: soft-light;
+}
+/* A gentle second layer gives the light a liquid, refractive feel */
+.liquid-glow::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    170px circle at var(--mx, 50%) var(--my, 50%),
+    rgba(255, 100, 55, 0.5),
+    rgba(255, 100, 55, 0.15) 40%,
+    transparent 60%
+  );
+  mix-blend-mode: screen;
+}
+/* Water-drop ripple spawned on pointer-enter */
+.liquid-ripple {
+  position: absolute;
+  width: 26rem;
+  height: 26rem;
+  margin: -13rem 0 0 -13rem;
+  border-radius: 9999px;
+  pointer-events: none;
+  z-index: 20;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.12) 45%, transparent 65%);
+  mix-blend-mode: soft-light;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Every interactive control gets a pointer cursor (Tailwind v4 preflight drops this) */
+button:not(:disabled),
+[role="button"],
+a {
+  cursor: pointer;
+}
+
+/* Respect users who ask for less motion */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  [data-anim] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  [data-curtain] {
+    clip-path: none !important;
+  }
+}

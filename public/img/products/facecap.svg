@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 521" fill="none">
+  <rect width="352" height="521" fill="#e2e2df"/>
+  <g stroke="#a5a4a2" stroke-width="7" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M108 214 C108 176 140 148 176 148 C212 148 244 176 244 214 Z"/>
+    <path d="M244 214 H286 C292 214 296 220 292 226 C286 232 268 236 244 236"/>
+  </g>
+  <text x="176" y="388" text-anchor="middle" font-family="system-ui, sans-serif" font-size="30" font-weight="700" fill="#302f30">Face cap</text>
+  <text x="176" y="416" text-anchor="middle" font-family="system-ui, sans-serif" font-size="15" fill="#7c7b7a">Photo coming soon</text>
+</svg>
