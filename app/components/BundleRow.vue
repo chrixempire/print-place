@@ -26,6 +26,8 @@ const isDark = props.bundle.theme === 'dark'
       <img
         :src="bundle.image"
         :alt="bundle.alt"
+        loading="lazy"
+        decoding="async"
         class="absolute inset-0 size-full object-cover transition-transform duration-[700ms] ease-out group-hover/img:scale-[1.06]"
       />
       <div class="liquid-glow pointer-events-none absolute inset-0 z-10 opacity-0 transition-opacity duration-500 group-hover/img:opacity-100"></div>
