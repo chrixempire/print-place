@@ -74,16 +74,16 @@ const pressCells = [
 // First 6 = the exact Figma arrangement (in cell order); the gallery photos join
 // the pool so they rotate into the cells over time.
 const pressPool = [
-  { src: '/img/contact/g1.png' },          // ICHAD journals
-  { src: '/img/contact/g2.png' },          // studio / press machines
-  { src: '/img/contact/g6.png' },          // desk + blinds
-  { src: '/img/contact/g3.png' },          // branded pens
-  { src: '/img/contact/team-group.jpg' },  // team group (DSC09557)
-  { src: '/img/contact/g4.png' },          // workshop
-  { src: '/img/gallery/gallery-1.jpg' },
-  { src: '/img/gallery/gallery-2.jpg' },
-  { src: '/img/gallery/gallery-3.jpg' },
-  { src: '/img/gallery/gallery-4.jpg' },
+  { src: '/img/contact/g1.webp' },          // ICHAD journals
+  { src: '/img/contact/g2.webp' },          // studio / press machines
+  { src: '/img/contact/g6.webp' },          // desk + blinds
+  { src: '/img/contact/g3.webp' },          // branded pens
+  { src: '/img/contact/team-group.webp' },  // team group (DSC09557)
+  { src: '/img/contact/g4.webp' },          // workshop
+  { src: '/img/gallery/gallery-1.webp' },
+  { src: '/img/gallery/gallery-2.webp' },
+  { src: '/img/gallery/gallery-3.webp' },
+  { src: '/img/gallery/gallery-4.webp' },
 ]
 const pressSlots = ref(pressPool.slice(0, 6)) // initial paint = pixel-perfect Figma
 const pressRoot = ref<HTMLElement | null>(null)
@@ -274,7 +274,7 @@ useHead({
             class="press-tile group absolute overflow-hidden bg-white"
             :style="{ left: pressCells[i].l, top: pressCells[i].t, width: pressCells[i].w, height: pressCells[i].h, borderRadius: pressCells[i].r }"
           >
-            <img :src="g.src" alt="Printplace work" class="size-full object-cover" />
+            <img :src="g.src" alt="Printplace work" loading="lazy" decoding="async" class="size-full object-cover" />
             <div class="liquid-glow pointer-events-none absolute inset-0 z-10 opacity-0 transition-opacity duration-500 group-hover:opacity-100"></div>
           </div>
         </div>
@@ -287,7 +287,7 @@ useHead({
               :aria-hidden="i >= pressPool.length ? 'true' : undefined"
               class="h-[220px] w-[165px] shrink-0 overflow-hidden rounded-2xl bg-white"
             >
-              <img :src="g.src" alt="Printplace work" class="size-full object-cover" />
+              <img :src="g.src" alt="Printplace work" loading="lazy" decoding="async" class="size-full object-cover" />
             </div>
           </div>
         </div>

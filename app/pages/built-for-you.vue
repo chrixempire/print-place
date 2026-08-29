@@ -10,7 +10,7 @@ useSeo({
 
 const bundles: Bundle[] = [
   {
-    image: '/img/bundle-interdab.jpg',
+    image: '/img/bundle-interdab.webp',
     alt: 'INTERDAB branded t-shirts in white, grey and black',
     theme: 'dark',
     price: 'N80,000',
@@ -20,7 +20,7 @@ const bundles: Bundle[] = [
       'This package comes with a free mock up design, 10 100% cotton tshirts branded in any color and size of choice.',
   },
   {
-    image: '/img/bundle-matrix.jpg',
+    image: '/img/bundle-matrix.webp',
     alt: 'Matrix branded merch set — box, cap, tee, tote and bottle',
     theme: 'light',
     price: 'N30,000',
@@ -31,7 +31,7 @@ const bundles: Bundle[] = [
       'Branded box, tee, baseball cap, canvas tote bag, thermal bottle, and a personalized welcome card.',
   },
   {
-    image: '/img/bundle-itel.jpg',
+    image: '/img/bundle-itel.webp',
     alt: 'itel branded hoodie, umbrella and mug in red',
     theme: 'light',
     price: 'N350,000',
@@ -41,7 +41,7 @@ const bundles: Bundle[] = [
       '10 canopy-crafted umbrellas, 10 100% cotton hoodies and 10 microwave-safe ceramic coffee mug',
   },
   {
-    image: '/img/bundle-parthian.jpg',
+    image: '/img/bundle-parthian.webp',
     alt: 'PARTHIAN executive leather gift set — journal, pen, bottle and keyholder',
     theme: 'light',
     price: '20k/box',
@@ -51,7 +51,7 @@ const bundles: Bundle[] = [
       'Sturdy leather journal, ball pen, temperature bottle, dome keyholder, crafted to fit box, all branded',
   },
   {
-    image: '/img/bundle-korapay.jpg',
+    image: '/img/bundle-korapay.webp',
     alt: 'korapay branded merch — hoodie, polo, cap, box and tote',
     theme: 'light',
     type: 'cta',
@@ -62,15 +62,15 @@ const bundles: Bundle[] = [
 ]
 
 const products: Product[] = [
-  { image: '/img/products/tshirt.jpg', name: 'T-shirt', price: 'N7,000' },
-  { image: '/img/products/facecap.jpg', name: 'Face cap', price: 'N4,000' },
-  { image: '/img/products/thermal.png', name: 'Thermal Bottles', price: 'N7,500' },
-  { image: '/img/products/tote.png', name: 'Tote bag', price: 'N5,000' },
-  { image: '/img/products/umbrella.png', name: 'Umbrella', price: 'N9,000' },
-  { image: '/img/products/journal.png', name: 'Spiral Journals', price: 'N1,000' },
-  { image: '/img/products/handfans.png', name: 'Handfans', price: 'N1,000' },
-  { image: '/img/products/mug.png', name: 'Coffee mug', price: 'N3,000' },
-  { image: '/img/products/ballpen.png', name: 'Ball pen', price: 'N1,200' },
+  { image: '/img/products/tshirt.webp', name: 'T-shirt', price: 'N7,000' },
+  { image: '/img/products/facecap.webp', name: 'Face cap', price: 'N4,000' },
+  { image: '/img/products/thermal.webp', name: 'Thermal Bottles', price: 'N7,500' },
+  { image: '/img/products/tote.webp', name: 'Tote bag', price: 'N5,000' },
+  { image: '/img/products/umbrella.webp', name: 'Umbrella', price: 'N9,000' },
+  { image: '/img/products/journal.webp', name: 'Spiral Journals', price: 'N1,000' },
+  { image: '/img/products/handfans.webp', name: 'Handfans', price: 'N1,000' },
+  { image: '/img/products/mug.webp', name: 'Coffee mug', price: 'N3,000' },
+  { image: '/img/products/ballpen.webp', name: 'Ball pen', price: 'N1,200' },
 ]
 
 // Structured data: the bundles as a Product ItemList (helps rich results).
