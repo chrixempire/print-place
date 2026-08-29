@@ -12,18 +12,18 @@ useSeo({
 // — then the whole strip loops seamlessly to the left (see buildCollageLoop).
 type CollageCard = { src: string; w: number; h: number; big?: boolean }
 const smallA: CollageCard[] = [
-  { src: '/img/about/hero/h1.png', w: 194, h: 248 },
-  { src: '/img/about/hero/h2.png', w: 194, h: 338 },
-  { src: '/img/about/hero/h3.png', w: 231, h: 286 },
+  { src: '/img/about/hero/h1.webp', w: 194, h: 248 },
+  { src: '/img/about/hero/h2.webp', w: 194, h: 338 },
+  { src: '/img/about/hero/h3.webp', w: 231, h: 286 },
 ]
 const smallB: CollageCard[] = [
-  { src: '/img/about/hero/h5.png', w: 181, h: 228 },
-  { src: '/img/about/hero/h6.png', w: 188, h: 266 },
-  { src: '/img/about/hero/h7.png', w: 151, h: 173 },
+  { src: '/img/about/hero/h5.webp', w: 181, h: 228 },
+  { src: '/img/about/hero/h6.webp', w: 188, h: 266 },
+  { src: '/img/about/hero/h7.webp', w: 151, h: 173 },
 ]
 // Width matches the gallery photos' 3:2 ratio at h=437 so the full image shows
 // (no crop); small cards keep their own widths.
-const bigGallery = (n: number): CollageCard => ({ src: `/img/gallery/gallery-${n}.jpg`, w: 656, h: 437, big: true })
+const bigGallery = (n: number): CollageCard => ({ src: `/img/gallery/gallery-${n}.webp`, w: 656, h: 437, big: true })
 const heroCollage = [
   ...smallA, bigGallery(1),
   ...smallB, bigGallery(2),
@@ -45,15 +45,15 @@ const toggleFeature = (i: number) => (openFeature.value = openFeature.value === 
 
 const team = [
   // CEO card hidden from the "Our team" carousel for now.
-  // { img: '/img/about/founder.png', name: 'Olajumoke Olutomiwa', role: 'Founder & CEO', pos: 'center top', zoom: 1 },
-  { img: '/img/team/darasimi.jpg', name: 'Abiola Darasimi', role: 'Chief Operating Officer', pos: 'center 20%', zoom: 1 },
-  { img: '/img/team/serah.jpg', name: 'Hundeyin Serah', role: 'Head of Sales', pos: 'center 20%', zoom: 1 },
-  { img: '/img/team/eniola.jpg', name: 'Obasa Eniola', role: 'Head of Production', pos: 'center 20%', zoom: 1 },
-  { img: '/img/team/peace.jpg', name: 'Awoniyi Peace', role: 'Quality assurance Officer', pos: 'center 20%', zoom: 1 },
+  // { img: '/img/about/founder.webp', name: 'Olajumoke Olutomiwa', role: 'Founder & CEO', pos: 'center top', zoom: 1 },
+  { img: '/img/team/darasimi.webp', name: 'Abiola Darasimi', role: 'Chief Operating Officer', pos: 'center 20%', zoom: 1 },
+  { img: '/img/team/serah.webp', name: 'Hundeyin Serah', role: 'Head of Sales', pos: 'center 20%', zoom: 1 },
+  { img: '/img/team/eniola.webp', name: 'Obasa Eniola', role: 'Head of Production', pos: 'center 20%', zoom: 1 },
+  { img: '/img/team/peace.webp', name: 'Awoniyi Peace', role: 'Quality assurance Officer', pos: 'center 20%', zoom: 1 },
   // dami.jpg assigned to Ibukunoluwa by elimination — confirm this is the right person.
-  { img: '/img/team/dami.jpg', name: 'Awoponle Ibukunoluwa', role: 'Customer Support Representative', pos: 'center 20%', zoom: 1 },
-  { img: '/img/team/omolola.jpg', name: 'Adegboyega Omolola', role: 'Head of Marketing', pos: 'center 20%', zoom: 1 },
-  { img: '/img/team/christianah.jpg', name: 'Hude Christianah', role: 'Head of Procurement', pos: 'center 20%', zoom: 1 },
+  { img: '/img/team/dami.webp', name: 'Awoponle Ibukunoluwa', role: 'Customer Support Representative', pos: 'center 20%', zoom: 1 },
+  { img: '/img/team/omolola.webp', name: 'Adegboyega Omolola', role: 'Head of Marketing', pos: 'center 20%', zoom: 1 },
+  { img: '/img/team/christianah.webp', name: 'Hude Christianah', role: 'Head of Procurement', pos: 'center 20%', zoom: 1 },
 ]
 
 // TEAM carousel — hover arrows + hand/drag scroll, with a continuous, seamless
@@ -84,16 +84,24 @@ const scrollTeam = (dir: number) => {
   interactTimer = window.setTimeout(() => { interacting.value = false }, 600)
 }
 
-// Mouse drag-to-scroll (touch/pen use native horizontal scrolling); wraps as it goes.
+// Mouse drag-to-scroll; touch/pen use the browser's native horizontal scrolling.
+// Either way we pause the auto-scroll while the user is interacting so it doesn't
+// fight their gesture (on touch the RAF loop would otherwise overwrite scrollLeft
+// every frame, making swipes feel stuck).
 let dragStartX = 0
 let dragStartScroll = 0
 const onTeamPointerDown = (e: PointerEvent) => {
   const el = teamTrack.value
-  if (!el || e.pointerType !== 'mouse') return
-  dragging.value = true
-  dragStartX = e.clientX
-  dragStartScroll = el.scrollLeft
-  el.setPointerCapture(e.pointerId)
+  if (!el) return
+  interacting.value = true
+  clearTimeout(interactTimer)
+  if (e.pointerType === 'mouse') {
+    dragging.value = true
+    dragStartX = e.clientX
+    dragStartScroll = el.scrollLeft
+    el.setPointerCapture(e.pointerId)
+  }
+  // touch/pen: let the native scroll container handle the pan
 }
 const onTeamPointerMove = (e: PointerEvent) => {
   if (!dragging.value) return
@@ -107,9 +115,13 @@ const onTeamPointerMove = (e: PointerEvent) => {
   el.scrollLeft = x
 }
 const onTeamPointerUp = (e: PointerEvent) => {
-  if (!dragging.value) return
-  dragging.value = false
-  teamTrack.value?.releasePointerCapture?.(e.pointerId)
+  if (dragging.value) {
+    dragging.value = false
+    teamTrack.value?.releasePointerCapture?.(e.pointerId)
+  }
+  // Resume the loop only after any touch momentum has settled.
+  clearTimeout(interactTimer)
+  interactTimer = window.setTimeout(() => { interacting.value = false }, 1000)
 }
 
 // Continuous leftward auto-scroll; yields during drag / arrow interaction.
@@ -242,20 +254,20 @@ onBeforeUnmount(() => {
 })
 
 const brands = [
-  '/img/about/brands/b1.png', '/img/about/brands/b2.png', '/img/about/brands/itel.png',
-  '/img/about/brands/b4.png', '/img/about/brands/b5.png', '/img/about/brands/ehealth.png',
-  '/img/about/brands/b7.png', '/img/about/brands/b8.png', '/img/about/brands/korapay.png',
+  '/img/about/brands/b1.webp', '/img/about/brands/b2.webp', '/img/about/brands/itel.webp',
+  '/img/about/brands/b4.webp', '/img/about/brands/b5.webp', '/img/about/brands/ehealth.webp',
+  '/img/about/brands/b7.webp', '/img/about/brands/b8.webp', '/img/about/brands/korapay.webp',
 ]
 
 // "Stop guessing" — product photos placed around a big circle whose centre is
 // off to the right, so they sit on the visible left arc and rotate around it.
 const budgetImgs = [
-  '/img/about/budget/g1.png',
-  '/img/about/budget/g2.png',
-  '/img/about/budget/g3.png',
-  '/img/about/budget/g4.png',
-  '/img/about/budget/g5.png',
-  '/img/about/budget/g6.png',
+  '/img/about/budget/g1.webp',
+  '/img/about/budget/g2.webp',
+  '/img/about/budget/g3.webp',
+  '/img/about/budget/g4.webp',
+  '/img/about/budget/g5.webp',
+  '/img/about/budget/g6.webp',
 ]
 // 12 slots (30° apart) — matches the Figma arc; big cards overlap slightly while rotating
 const budgetOrbit = [...budgetImgs, ...budgetImgs]
@@ -324,7 +336,7 @@ const faqs: FaqItem[] = [
     <section class="bg-stone-500 px-5 py-16 md:px-6 md:py-24">
       <div class="mx-auto flex max-w-[1080px] flex-col items-center gap-10 md:flex-row md:items-center md:gap-12">
         <div v-curtain class="group w-full overflow-hidden rounded-2xl md:w-[532px] md:shrink-0">
-          <img src="/img/about/process.png" alt="Our process" class="h-[300px] w-full object-cover transition-transform duration-[700ms] ease-out group-hover:scale-[1.04] md:h-[606px]" />
+          <img src="/img/about/process.webp" alt="Our process" loading="lazy" decoding="async" class="h-[300px] w-full object-cover transition-transform duration-[700ms] ease-out group-hover:scale-[1.04] md:h-[606px]" />
         </div>
         <div class="w-full md:flex-1">
           <h2 v-words class="text-[32px] font-bold leading-tight tracking-[-1px] text-neutral-500 md:text-[46px] md:leading-[50px] md:tracking-[-1.38px]">
@@ -389,7 +401,7 @@ const faqs: FaqItem[] = [
           </p>
         </div>
         <div v-curtain class="group relative h-[420px] w-full overflow-hidden rounded-2xl bg-gradient-to-b from-[#efe7dd] to-[#d8ccbf] md:h-[509px] md:w-[530px] md:shrink-0">
-          <img src="/img/about/founder.png" alt="Olajumoke Olutomiwa" class="size-full object-cover object-top transition-transform duration-[700ms] ease-out group-hover:scale-[1.05]" />
+          <img src="/img/about/founder.webp" alt="Olajumoke Olutomiwa" loading="lazy" decoding="async" class="size-full object-cover object-top transition-transform duration-[700ms] ease-out group-hover:scale-[1.05]" />
           <div class="absolute inset-x-0 bottom-0 h-[58%] bg-gradient-to-t from-black/90 via-black/45 to-transparent"></div>
           <div class="absolute inset-x-0 bottom-6 flex flex-col items-center text-white">
             <p class="text-[20px] font-bold leading-6">Olajumoke Olutomiwa</p>
@@ -485,7 +497,7 @@ const faqs: FaqItem[] = [
               :key="`${n}-${i}`"
               class="flex h-[60px] w-[120px] shrink-0 items-center justify-center opacity-80 transition-opacity duration-300 hover:opacity-100 md:h-[90px] md:w-[150px]"
             >
-              <img :src="b" alt="Brand logo" class="max-h-[46px] max-w-[75%] object-contain md:max-h-[70px]" />
+              <img :src="b" alt="Brand logo" loading="lazy" decoding="async" class="max-h-[46px] max-w-[75%] object-contain md:max-h-[70px]" />
             </div>
           </template>
         </div>
@@ -509,7 +521,7 @@ const faqs: FaqItem[] = [
               :style="{ '--a': (i * (360 / budgetOrbit.length)) + 'deg' }"
             >
               <div class="orbit-card">
-                <img :src="src" alt="Branded product sample from Printplaceng" class="size-full object-cover" draggable="false" />
+                <img :src="src" alt="Branded product sample from Printplaceng" loading="lazy" decoding="async" class="size-full object-cover" draggable="false" />
               </div>
             </div>
           </div>

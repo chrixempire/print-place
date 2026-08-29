@@ -18,6 +18,8 @@ defineProps<{ product: Product }>()
         <img
           :src="product.image"
           :alt="product.name"
+          loading="lazy"
+          decoding="async"
           class="absolute inset-0 size-full object-cover transition-transform duration-[600ms] ease-out group-hover/flip:scale-[1.06]"
         />
         <!-- top-right corner bracket -->

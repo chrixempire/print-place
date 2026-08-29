@@ -21,11 +21,11 @@ const socials = [
         class="relative w-[184px] rounded-[2px] bg-white p-3 pb-8 shadow-[0px_14px_7px_0px_rgba(0,0,0,0.04),0px_9px_4px_0px_rgba(0,0,0,0.03),0px_5px_2px_0px_rgba(0,0,0,0.02)]"
       >
         <div class="aspect-[180/200] w-full overflow-hidden">
-          <img src="/img/footer-tee.png" alt="Printplace custom tee" class="h-full w-full object-cover" />
+          <img src="/img/footer-tee.webp" alt="Printplace custom tee" loading="lazy" decoding="async" class="h-full w-full object-cover" />
         </div>
         <!-- tape -->
         <div class="absolute -top-4 left-1/2 flex w-[150px] -translate-x-1/2 -rotate-3 items-center justify-center">
-          <img src="/img/footer-tape.png" alt="" class="absolute inset-0 h-full w-full object-fill" />
+          <img src="/img/footer-tape.webp" alt="" loading="lazy" decoding="async" class="absolute inset-0 h-full w-full object-fill" />
           <span
             class="relative py-1 text-[20px] font-medium leading-[26px] text-[#202020]"
             style="text-shadow: 2px 1px 0 rgba(0, 0, 0, 0.25)"
