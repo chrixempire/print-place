@@ -7,58 +7,85 @@ useSeo({
     'Talk to Printplaceng about your custom merch and print project. Visit our Lagos showroom, chat on WhatsApp, or email hello@printplace.ng for a quote.',
 })
 
-// Single ordered list (2-col grid, row-major) — drag to re-arrange.
-// Order is interleaved so the initial grid matches the original two-column layout.
-const cards = ref([
-  { icon: '/icons/phone.svg', title: 'Talk to our team', value: 'hello@printplace.ng' },
-  { icon: '/icons/instagram.svg', title: 'Follow our work', value: '@printplace' },
-  { icon: '/icons/linkedin.svg', title: 'Connect on LinkedIn', value: 'Print Place' },
-  { icon: '/icons/whatsapp.svg', title: 'Chat with us', value: '+234 XXX XXX XXXX' },
-  { icon: '/icons/map-point.svg', title: 'Visit our showroom', value: '121 Isolo rd, Palm Avenue, Lagos' },
+// Contact / social cards. Tap opens the destination; grab the ⠿ handle to re-order.
+// NOTE: replace the WhatsApp `href` number below with the real business line.
+type ContactCard = {
+  id: string
+  icon: string
+  title: string
+  value: string
+  href: string
+  external?: boolean // opens in a new tab
+}
+const cards = ref<ContactCard[]>([
+  { id: 'email', icon: '/icons/phone.svg', title: 'Talk to our team', value: 'hello@printplace.ng', href: 'mailto:hello@printplace.ng' },
+  { id: 'instagram', icon: '/icons/instagram.svg', title: 'Follow our work', value: '@printplaceng', href: 'https://www.instagram.com/printplaceng', external: true },
+  { id: 'linkedin', icon: '/icons/linkedin.svg', title: 'Connect on LinkedIn', value: 'Print Place', href: 'https://www.linkedin.com/company/printplacengr/', external: true },
+  { id: 'whatsapp', icon: '/icons/whatsapp.svg', title: 'Chat with us', value: '+234 XXX XXX XXXX', href: 'https://wa.me/234XXXXXXXXXX', external: true },
+  { id: 'youtube', icon: '/icons/youtube.svg', title: 'Watch on YouTube', value: '@theprintplaceteam', href: 'https://youtube.com/@theprintplaceteam', external: true },
+  { id: 'tiktok', icon: '/icons/tiktok.svg', title: 'Follow on TikTok', value: '@printplaceng', href: 'https://www.tiktok.com/@printplaceng', external: true },
+  { id: 'x', icon: '/icons/x.svg', title: 'Follow on X', value: '@printplaceng_', href: 'https://x.com/printplaceng_', external: true },
+  { id: 'map', icon: '/icons/map-point.svg', title: 'Visit our showroom', value: '121 Isolo rd, Palm Avenue, Lagos', href: 'https://www.google.com/maps/search/?api=1&query=121%20Isolo%20Road%2C%20Palm%20Avenue%2C%20Lagos', external: true },
 ])
 
-// --- drag-to-reorder (native DnD + <TransitionGroup> FLIP shuffle) ---
-const dragIndex = ref<number | null>(null)
-function onDragStart(i: number, e: DragEvent) {
-  dragIndex.value = i
-  if (e.dataTransfer) {
-    e.dataTransfer.effectAllowed = 'move'
-    e.dataTransfer.setData('text/plain', String(i)) // Firefox needs a payload to drag
-  }
-}
-function onDragEnter(i: number) {
-  const from = dragIndex.value
-  if (from === null || from === i) return
-  const list = cards.value.slice()
-  const [item] = list.splice(from, 1)
-  list.splice(i, 0, item)
-  cards.value = list
-  dragIndex.value = i // the dragged card now lives at slot i
-}
-function onDragEnd() {
-  dragIndex.value = null
+// --- drag-to-reorder ---------------------------------------------------------
+// Pointer Events (works with mouse AND touch, unlike native HTML5 DnD which is
+// dead on mobile). The card being moved lifts into a fixed "ghost" that follows
+// the finger freely, while the list reorders live under it (FLIP animates the
+// rest). No auto-shuffle — the arrangement the user makes is the one that stays.
+const draggingId = ref<string | null>(null)
+const draggingCard = computed(() => cards.value.find((c) => c.id === draggingId.value) || null)
+const ghost = ref({ x: 0, y: 0, w: 0 })
+
+let activePointer: number | null = null
+let grabDX = 0
+let grabDY = 0
+
+function onHandleDown(id: string, e: PointerEvent) {
+  if (e.button != null && e.button > 0) return // left / primary only
+  e.preventDefault()
+  const card = (e.currentTarget as HTMLElement).closest('[data-card-id]') as HTMLElement | null
+  if (!card) return
+  const rect = card.getBoundingClientRect()
+  grabDX = e.clientX - rect.left
+  grabDY = e.clientY - rect.top
+  ghost.value = { x: rect.left, y: rect.top, w: rect.width }
+  draggingId.value = id
+  activePointer = e.pointerId
+  window.addEventListener('pointermove', onPointerMove, { passive: false })
+  window.addEventListener('pointerup', onPointerUp)
+  window.addEventListener('pointercancel', onPointerUp)
 }
 
-// Auto re-arrange every 2 minutes (skips while a manual drag is in progress).
-// The <TransitionGroup> animates the new order with the same FLIP shuffle.
-let shuffleTimer: ReturnType<typeof setInterval> | null = null
-function shuffleCards() {
-  if (dragIndex.value !== null) return // don't disrupt an active drag
+function onPointerMove(e: PointerEvent) {
+  if (activePointer === null || e.pointerId !== activePointer) return
+  e.preventDefault()
+  ghost.value = { ...ghost.value, x: e.clientX - grabDX, y: e.clientY - grabDY }
+  // Reorder when the finger passes over another card. The ghost is
+  // pointer-events:none, so elementFromPoint returns the card underneath.
+  const over = (document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null)?.closest('[data-card-id]')
+  const overId = over?.getAttribute('data-card-id')
+  if (!overId || overId === draggingId.value) return
+  const from = cards.value.findIndex((c) => c.id === draggingId.value)
+  const to = cards.value.findIndex((c) => c.id === overId)
+  if (from === -1 || to === -1) return
   const list = cards.value.slice()
-  for (let i = list.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[list[i], list[j]] = [list[j], list[i]]
-  }
-  // guarantee a visible change
-  if (list.every((c, i) => c.title === cards.value[i].title)) list.push(list.shift()!)
+  const [item] = list.splice(from, 1)
+  list.splice(to, 0, item)
   cards.value = list
 }
-onMounted(() => {
-  shuffleTimer = setInterval(shuffleCards, 120_000)
-})
-onBeforeUnmount(() => {
-  if (shuffleTimer) clearInterval(shuffleTimer)
-})
+
+function stopDragListeners() {
+  window.removeEventListener('pointermove', onPointerMove)
+  window.removeEventListener('pointerup', onPointerUp)
+  window.removeEventListener('pointercancel', onPointerUp)
+}
+function onPointerUp() {
+  draggingId.value = null
+  activePointer = null
+  stopDragListeners()
+}
+onBeforeUnmount(stopDragListeners)
 
 // "Fresh off the press" — pixel-perfect bento (Figma 18491:464068).
 // pressCells: fixed geometry (as % of the 890×811 frame) for the 6 desktop cells.
@@ -220,7 +247,7 @@ useHead({
           <AppButton to="/built-for-you" class="mt-2">See packages</AppButton>
         </div>
 
-        <!-- drag any card to re-arrange; others shuffle with a FLIP animation -->
+        <!-- tap a card to open it; grab the ⠿ handle to drag & re-arrange -->
         <TransitionGroup
           v-anim:up.stagger
           tag="div"
@@ -228,30 +255,56 @@ useHead({
           class="grid w-full grid-cols-1 gap-4 md:grid-cols-2"
         >
           <div
-            v-for="(c, i) in cards"
-            :key="c.title"
-            draggable="true"
-            @dragstart="onDragStart(i, $event)"
-            @dragenter.prevent="onDragEnter(i)"
-            @dragover.prevent
-            @drop.prevent
-            @dragend="onDragEnd"
-            class="card-item group relative flex cursor-grab items-center gap-4 overflow-hidden rounded-2xl border border-gray-500/50 bg-white px-6 py-[19px] shadow-sm transition-[border-color,box-shadow,opacity] duration-300 ease-out hover:border-coral-500/40 hover:shadow-xl active:cursor-grabbing"
-            :class="dragIndex === i ? 'opacity-40 ring-2 ring-coral-500/50' : ''"
+            v-for="c in cards"
+            :key="c.id"
+            :data-card-id="c.id"
+            class="card-item group relative flex items-center overflow-hidden rounded-2xl border border-gray-500/50 bg-white shadow-sm transition-[border-color,box-shadow,opacity,transform] duration-300 ease-out hover:border-coral-500/40 hover:shadow-xl"
+            :class="draggingId === c.id ? 'opacity-0' : ''"
           >
             <!-- coral wash sweeps in from the left on hover -->
             <span class="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-coral-500/10 to-transparent transition-transform duration-500 ease-out group-hover:translate-x-0"></span>
-            <span class="relative flex size-10 shrink-0 items-center justify-center rounded-full bg-[#f0f0ef] transition-all duration-300 ease-out group-hover:rotate-6 group-hover:scale-110 group-hover:bg-coral-500/15">
-              <img :src="c.icon" alt="" draggable="false" class="size-5 transition-transform duration-300 group-hover:scale-110" />
-            </span>
-            <span class="relative flex flex-col text-[16px] leading-5">
-              <span class="font-[550] text-neutral-500">{{ c.title }}</span>
-              <span class="font-medium text-neutral-200 transition-colors duration-300 group-hover:text-coral-600">{{ c.value }}</span>
-            </span>
-            <!-- drag handle hint -->
-            <span class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[18px] leading-none text-neutral-200 opacity-0 transition-opacity duration-300 group-hover:opacity-70">⠿</span>
+            <!-- tappable link: icon + text -->
+            <a
+              :href="c.href"
+              :target="c.external ? '_blank' : undefined"
+              :rel="c.external ? 'noopener noreferrer' : undefined"
+              class="relative flex flex-1 items-center gap-4 py-[19px] pl-6 pr-12"
+            >
+              <span class="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#f0f0ef] transition-all duration-300 ease-out group-hover:rotate-6 group-hover:scale-110 group-hover:bg-coral-500/15">
+                <img :src="c.icon" alt="" draggable="false" class="size-5 transition-transform duration-300 group-hover:scale-110" />
+              </span>
+              <span class="flex flex-col text-[16px] leading-5">
+                <span class="font-[550] text-neutral-500">{{ c.title }}</span>
+                <span class="font-medium text-neutral-200 transition-colors duration-300 group-hover:text-coral-600">{{ c.value }}</span>
+              </span>
+            </a>
+            <!-- drag handle -->
+            <button
+              type="button"
+              aria-label="Drag to re-arrange"
+              @pointerdown="onHandleDown(c.id, $event)"
+              class="drag-handle absolute right-1 top-1/2 -translate-y-1/2 flex size-10 cursor-grab touch-none select-none items-center justify-center text-[18px] leading-none text-neutral-200 opacity-40 transition-opacity duration-300 hover:opacity-90 active:cursor-grabbing md:opacity-0 md:group-hover:opacity-70"
+            >⠿</button>
           </div>
         </TransitionGroup>
+
+        <!-- lifted card that follows the finger while dragging -->
+        <div
+          v-if="draggingCard"
+          class="card-ghost pointer-events-none fixed left-0 top-0 z-[60] flex items-center rounded-2xl border border-coral-500/40 bg-white shadow-2xl ring-2 ring-coral-500/30"
+          :style="{ width: ghost.w + 'px', transform: `translate3d(${ghost.x}px, ${ghost.y}px, 0) rotate(-1.5deg) scale(1.03)` }"
+        >
+          <span class="flex flex-1 items-center gap-4 py-[19px] pl-6 pr-12">
+            <span class="flex size-10 shrink-0 items-center justify-center rounded-full bg-coral-500/15">
+              <img :src="draggingCard.icon" alt="" draggable="false" class="size-5" />
+            </span>
+            <span class="flex flex-col text-[16px] leading-5">
+              <span class="font-[550] text-neutral-500">{{ draggingCard.title }}</span>
+              <span class="font-medium text-coral-600">{{ draggingCard.value }}</span>
+            </span>
+          </span>
+          <span class="absolute right-1 top-1/2 -translate-y-1/2 flex size-10 items-center justify-center text-[18px] leading-none text-neutral-300">⠿</span>
+        </div>
       </div>
     </section>
 
@@ -309,13 +362,14 @@ useHead({
 </template>
 
 <style scoped>
-/* FLIP shuffle: cards glide to their new slots while dragging/reordering */
+/* FLIP shuffle: cards glide to their new slots while reordering */
 .card-move {
   transition: transform 0.38s cubic-bezier(0.22, 1, 0.36, 1);
 }
-/* the lifted card shouldn't animate its own move (native drag ghost handles it) */
-.card-item:active {
+/* the floating ghost tracks the finger 1:1 — no transition to lag behind */
+.card-ghost {
   transition: none;
+  will-change: transform;
 }
 @media (prefers-reduced-motion: reduce) {
   .card-move {
