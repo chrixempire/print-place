@@ -11,14 +11,20 @@ const socials = [
 
 <template>
   <footer class="relative overflow-hidden bg-yellow-50 px-5 pb-12 pt-14 md:px-6">
-    <!-- CUSTOM / BRANDING corner labels -->
-    <span class="corner-label left-4 top-1/2 md:left-[6%]">CUSTOM</span>
-    <span class="corner-label right-4 top-1/2 md:right-[6%]">BRANDING</span>
+    <!-- Desktop CUSTOM/BRANDING — sit at the nav-links row, inset ~12.5% to line up
+         with the content column edges. Hidden on mobile (rendered inline below). -->
+    <span class="corner-label absolute z-20 hidden -translate-y-1/2 md:block md:left-[12.5%] md:top-[calc(100%-150px)]">CUSTOM</span>
+    <span class="corner-label absolute z-20 hidden -translate-y-1/2 md:block md:right-[12.5%] md:top-[calc(100%-150px)]">BRANDING</span>
+    <!-- Mobile CUSTOM/BRANDING — flank the polaroid, pinned to the footer edges.
+         The polaroid is narrow on mobile so the labels never overlap it. -->
+    <span class="corner-label absolute left-4 top-[132px] z-20 md:hidden">CUSTOM</span>
+    <span class="corner-label absolute right-4 top-[132px] z-20 md:hidden">BRANDING</span>
 
-    <div class="mx-auto flex max-w-[1080px] flex-col items-center gap-6">
-      <!-- Polaroid -->
+    <div class="mx-auto flex w-full max-w-[1080px] flex-col items-center gap-6">
+      <!-- Polaroid — centered in the column; the CUSTOM/BRANDING labels are pinned
+           to the footer edges (above) at this vertical level. -->
       <div
-        class="relative w-[184px] rounded-[2px] bg-white p-3 pb-8 shadow-[0px_14px_7px_0px_rgba(0,0,0,0.04),0px_9px_4px_0px_rgba(0,0,0,0.03),0px_5px_2px_0px_rgba(0,0,0,0.02)]"
+        class="relative w-[132px] rounded-[2px] bg-white p-3 pb-8 shadow-[0px_14px_7px_0px_rgba(0,0,0,0.04),0px_9px_4px_0px_rgba(0,0,0,0.03),0px_5px_2px_0px_rgba(0,0,0,0.02)] md:w-[184px]"
       >
         <div class="aspect-[180/200] w-full overflow-hidden">
           <img src="/img/footer-tee.webp" alt="Printplace custom tee" loading="lazy" decoding="async" class="h-full w-full object-cover" />
@@ -63,13 +69,18 @@ const socials = [
 
 <style scoped>
 .corner-label {
+  /* All instances are absolutely positioned (mobile flanks the polaroid, desktop
+     sits at the nav row). This is set on the base — a Tailwind `absolute` utility
+     has the same specificity as this scoped rule and would lose the cascade. */
   position: absolute;
-  z-index: 10;
-  transform: translateY(-50%);
   padding: 3px 6px;
-  font-size: 16px;
+  /* 14px reads at the design's optical size (Aspekta runs a touch larger than the
+     Figma's DM Sans at the same px), so 16px looked oversized. */
+  font-size: 14px;
   font-weight: 700;
-  line-height: 20px;
+  line-height: 18px;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
   color: var(--color-coral-500);
 }
 /* corner brackets */

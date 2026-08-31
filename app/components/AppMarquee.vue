@@ -40,7 +40,11 @@ onBeforeUnmount(() => st?.kill())
         <div v-for="s in 2" :key="s" class="flex shrink-0 items-center" aria-hidden="true">
           <span v-for="(item, i) in setItems" :key="`${s}-${i}`" class="flex items-center">
             <span class="whitespace-nowrap px-6 text-[16px] font-medium leading-5">{{ item }}</span>
-            <span class="text-[18px] leading-none">🔥</span>
+            <img
+              src="/icons/marquee-swirl.png"
+              alt=""
+              class="size-7 shrink-0 rotate-[-75deg] object-contain"
+            />
           </span>
         </div>
       </div>

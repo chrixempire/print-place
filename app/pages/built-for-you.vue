@@ -111,7 +111,7 @@ useHead({ script: [{ type: 'application/ld+json', innerHTML: JSON.stringify(bund
           We’ve handled the hard part.
         </h1>
         <p v-anim:up="150" class="text-[18px] leading-6 text-neutral-400">Your turn to choose</p>
-        <AppButton to="/contact" class="mt-2">Let’s talk more</AppButton>
+        <AppButton to="https://wa.me/2349122523641" class="mt-2">Let’s talk more</AppButton>
       </div>
     </section>
 

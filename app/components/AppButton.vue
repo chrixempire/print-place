@@ -14,6 +14,9 @@ const props = withDefaults(
   { variant: 'primary', block: false },
 )
 
+// Absolute URLs (WhatsApp, mailto, tel, external sites) open in a new tab.
+const isExternal = computed(() => /^(https?:|mailto:|tel:)/.test(props.to ?? ''))
+
 const classes = computed(() => [
   'group/ab relative isolate inline-flex cursor-pointer items-center justify-center overflow-hidden rounded-full px-6 py-3 text-[18px] font-bold leading-6 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:scale-[0.98]',
   props.block ? 'w-full' : '',
@@ -28,7 +31,13 @@ const sheen =
 </script>
 
 <template>
-  <NuxtLink v-if="to" :to="to" :class="classes">
+  <NuxtLink
+    v-if="to"
+    :to="to"
+    :target="isExternal ? '_blank' : undefined"
+    :rel="isExternal ? 'noopener noreferrer' : undefined"
+    :class="classes"
+  >
     <span :class="sheen" aria-hidden="true" />
     <span class="relative z-10 inline-flex items-center gap-2"><slot /></span>
   </NuxtLink>
