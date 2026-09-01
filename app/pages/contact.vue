@@ -21,7 +21,7 @@ const cards: ContactCard[] = [
   { id: 'email', icon: '/icons/phone.svg', title: 'Talk to our team', value: 'hello@printplace.ng', href: 'mailto:hello@printplace.ng' },
   { id: 'instagram', icon: '/icons/instagram.svg', title: 'Follow our work', value: '@printplaceng', href: 'https://www.instagram.com/printplaceng', external: true },
   { id: 'linkedin', icon: '/icons/linkedin.svg', title: 'Connect on LinkedIn', value: 'Print Place', href: 'https://www.linkedin.com/company/printplacengr/', external: true },
-  { id: 'whatsapp', icon: '/icons/whatsapp.svg', title: 'Chat with us', value: '+234 912 252 3641', href: 'https://wa.me/2349122523641', external: true },
+  { id: 'whatsapp', icon: '/icons/whatsapp.svg', title: 'Chat with us', value: '+234 707 435 6310', href: 'https://wa.me/2347074356310', external: true },
   { id: 'youtube', icon: '/icons/youtube.svg', title: 'Watch on YouTube', value: '@theprintplaceteam', href: 'https://youtube.com/@theprintplaceteam', external: true },
   { id: 'tiktok', icon: '/icons/tiktok.svg', title: 'Follow on TikTok', value: '@printplaceng', href: 'https://www.tiktok.com/@printplaceng', external: true },
   { id: 'x', icon: '/icons/x.svg', title: 'Follow on X', value: '@printplaceng_', href: 'https://x.com/printplaceng_', external: true },
