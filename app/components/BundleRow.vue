@@ -74,7 +74,7 @@ const isDark = props.bundle.theme === 'dark'
         <NuxtLink
           v-if="!isCta"
           v-magnetic="0.18"
-          to="https://wa.me/2349122523641"
+          to="https://wa.me/2347074356310"
           target="_blank"
           rel="noopener noreferrer"
           class="group/btn relative isolate flex w-full cursor-pointer items-center justify-between overflow-hidden rounded-full bg-white py-2 pl-6 pr-2.5 text-left transition-shadow duration-300 hover:shadow-lg"
