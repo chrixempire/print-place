@@ -100,6 +100,36 @@ const bundleLd = {
     }),
 }
 useHead({ script: [{ type: 'application/ld+json', innerHTML: JSON.stringify(bundleLd) }] })
+
+// Sticky-stack polish. CSS `sticky` pins each card; this scrubs a gentle DIM on
+// every card as the NEXT one climbs over it, so buried cards recede into shadow
+// (and brighten back on the way up) with no hard snap. Deliberately NO scale —
+// scaling shrinks a card's width, which left every covered card narrower than the
+// never-covered last one, so the last card overhung the pile on the sides. Dimming
+// keeps all cards the exact same size, so they lie perfectly on top of each other.
+const stackRoot = ref<HTMLElement | null>(null)
+onMounted(() => {
+  const { gsap, reduced } = useGsap()
+  if (reduced || !stackRoot.value) return
+  const cards = Array.from(stackRoot.value.querySelectorAll<HTMLElement>('.stack-card'))
+  const ctx = gsap.context(() => {
+    cards.forEach((card, i) => {
+      const next = cards[i + 1]
+      if (!next) return // last card is never covered — it stays fully lit
+      gsap.set(card, { willChange: 'filter' })
+      gsap.fromTo(
+        card,
+        { filter: 'brightness(1)' },
+        {
+          filter: 'brightness(0.82)',
+          ease: 'none',
+          scrollTrigger: { trigger: next, start: 'top 90%', end: 'top 22%', scrub: 0.4 },
+        },
+      )
+    })
+  }, stackRoot.value)
+  onBeforeUnmount(() => ctx.revert())
+})
 </script>
 
 <template>
@@ -115,10 +145,20 @@ useHead({ script: [{ type: 'application/ld+json', innerHTML: JSON.stringify(bund
       </div>
     </section>
 
-    <!-- Bundles -->
+    <!-- Bundles — cards stick to the top and pile up as you scroll down, then
+         unstack when you scroll back up. Sticky handles the pinning; a scrubbed
+         GSAP tween eases each covered card back in scale + dims it, so the deck
+         forms and releases smoothly instead of snapping. -->
     <section class="mx-auto max-w-[1080px] px-5 pb-20 md:px-6">
-      <div class="flex flex-col gap-5">
-        <BundleRow v-for="(b, i) in bundles" :key="b.title" v-flip="i * 60" :bundle="b" />
+      <div ref="stackRoot" class="flex flex-col gap-5">
+        <div
+          v-for="(b, i) in bundles"
+          :key="b.title"
+          class="stack-card sticky"
+          :style="{ '--i': i }"
+        >
+          <BundleRow :bundle="b" />
+        </div>
       </div>
     </section>
 
@@ -131,3 +171,22 @@ useHead({ script: [{ type: 'application/ld+json', innerHTML: JSON.stringify(bund
     </section>
   </div>
 </template>
+
+<style scoped>
+/* Sticky-stack: each card pins just below the navbar, offset a little further
+   down per index so the earlier cards peek out behind it as they pile up.
+   Scrolling back up releases them in reverse — no JS needed. */
+.stack-card {
+  top: calc(80px + var(--i) * 14px);
+}
+@media (min-width: 768px) {
+  .stack-card {
+    top: calc(97px + var(--i) * 18px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stack-card {
+    position: static;
+  }
+}
+</style>

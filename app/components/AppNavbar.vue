@@ -19,7 +19,7 @@ const onDark = computed(() => route.path === '/')
         <img
           src="/img/logo.webp"
           alt="Printplaceng"
-          class="h-[34px] w-auto md:h-[38px]"
+          class="h-[44px] w-auto md:h-[52px]"
           :class="onDark ? '[filter:brightness(0)_invert(1)]' : ''"
         />
       </NuxtLink>

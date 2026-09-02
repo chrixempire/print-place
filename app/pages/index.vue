@@ -170,22 +170,14 @@ let heroCtx: any = null
 
 // Hero collage marquee — a seamless, continuous right→left "flow" driven by GSAP,
 // inside a fixed-width window (the width the row had with the original 7 images).
-// Two layers of GSAP animation:
-//   1. a translate tween that slides the (doubled) track one copy-width forever,
-//      so the wrap point is invisible;
-//   2. a per-frame travelling sine wave (via gsap.ticker) that gently bobs each
-//      card up/down based on its live position — the "flowing like water" feel.
-// Hover ramps the translate's timeScale to 0 (a soft slow-to-stop); the ripple
-// keeps breathing so the water never looks frozen.
+// A single translate tween slides the (doubled) track one copy-width forever, so
+// the wrap point is invisible. Each card gets ONE subtle settle-bounce on entrance
+// (see the entrance timeline); after that the strip just scrolls — no perpetual
+// bobbing. Hover ramps the translate's timeScale to 0 (a soft slow-to-stop).
 const collageTrack = ref<HTMLElement | null>(null)
 const marquee = ref(false)
 const COLLAGE_SPEED = 55 // px / second
-const WAVE_AMP = 9 // px of vertical bob
-const WAVE_FREQ = 0.0055 // radians per px along the track
-const WAVE_DRIFT = 1.3 // radians per second the wave travels
 let collageTween: any = null
-let collageWave: ((t: number) => void) | null = null
-let wavePhase = 0
 let collageResizeT: ReturnType<typeof setTimeout>
 
 const buildCollageLoop = () => {
@@ -193,32 +185,19 @@ const buildCollageLoop = () => {
   const track = collageTrack.value
   if (!track || track.children.length <= heroCollage.length) return
   collageTween?.kill()
-  if (collageWave) gsap.ticker.remove(collageWave)
   gsap.set(track, { x: 0 })
-  const cards = Array.from(track.children) as HTMLElement[]
   // Distance from the first card to its duplicate = one full copy (incl. gaps).
   const loopDist =
     (track.children[heroCollage.length] as HTMLElement).offsetLeft -
     (track.children[0] as HTMLElement).offsetLeft
   if (loopDist <= 0) return
-  // 1) Slide from 0 to one copy left → content moves right→left; wraps seamlessly.
+  // Slide from 0 to one copy left → content moves right→left; wraps seamlessly.
   collageTween = gsap.to(track, {
     x: -loopDist,
     duration: loopDist / COLLAGE_SPEED,
     ease: 'none',
     repeat: -1,
   })
-  // 2) Travelling wave: y = amp·sin(cardX·freq + phase), recomputed each frame
-  // from the card's live on-screen x, so the ripple flows with the scroll.
-  collageWave = () => {
-    wavePhase += gsap.ticker.deltaRatio(60) / 60 * WAVE_DRIFT
-    const tx = gsap.getProperty(track, 'x') as number
-    for (const c of cards) {
-      const cx = c.offsetLeft + tx
-      gsap.set(c, { y: Math.sin(cx * WAVE_FREQ + wavePhase) * WAVE_AMP })
-    }
-  }
-  gsap.ticker.add(collageWave)
 }
 const pauseCollage = () =>
   collageTween && useGsap().gsap.to(collageTween, { timeScale: 0, duration: 0.6, ease: 'power2.out', overwrite: true })
@@ -252,6 +231,14 @@ onMounted(async () => {
       .fromTo(q('.hero-cta'), { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, clearProps: 'transform' }, 0.3)
       // The collage fades/rises in as one block; the flow itself carries the cards.
       .fromTo(q('.hero-collage'), { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.9 }, 0.3)
+      // Each card gets ONE soft settle-bounce as it arrives, then rests at y:0 and
+      // simply rides the horizontal scroll — no continuous bobbing.
+      .fromTo(
+        q('.hero-card'),
+        { y: 20 },
+        { y: 0, duration: 1, ease: 'elastic.out(1, 0.55)', stagger: { each: 0.035, from: 'start' } },
+        0.45,
+      )
     gsap.to(q('.hero-collage'), {
       yPercent: -6,
       ease: 'none',
@@ -264,7 +251,6 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   heroCtx?.revert()
   collageTween?.kill()
-  if (collageWave) useGsap().gsap.ticker.remove(collageWave)
   clearTimeout(collageResizeT)
   window.removeEventListener('resize', onCollageResize)
 })
@@ -440,13 +426,13 @@ const faqs: FaqItem[] = [
     </section>
 
     <!-- TEAM -->
-    <section class="bg-stone-500 py-16 md:py-20">
+    <section class="bg-stone-500 pb-6 pt-16 md:pb-8 md:pt-20">
       <h2 v-words class="mb-8 px-5 text-center text-[28px] font-bold leading-[42px] tracking-[-0.84px] text-neutral-500 md:text-[32px]">
         The people on your order
       </h2>
       <!-- original carousel (hover arrows + hand/drag); the team is rendered twice
            so the continuous leftward auto-scroll wraps by one set width seamlessly -->
-      <div class="group/car relative mx-auto max-w-[1400px]">
+      <div class="group/car relative w-full">
         <div
           ref="teamTrack"
           v-flip.stagger
@@ -507,7 +493,7 @@ const faqs: FaqItem[] = [
     </section>
 
     <!-- BRANDS -->
-    <section class="bg-stone-500 px-5 pb-16 pt-4 md:pb-24">
+    <section class="bg-stone-500 px-5 pb-16 pt-0 md:pb-24">
       <p class="mb-2 text-center text-[18px] font-[450] tracking-[-0.54px] text-neutral-500">
         Brands we have helped show up better
       </p>
@@ -566,7 +552,7 @@ const faqs: FaqItem[] = [
             Stop guessing your merch budget
           </h2>
           <p v-anim:up="200" class="text-[18px] text-gray-500">We’ve already done the maths for you</p>
-          <AppButton to="/built-for-you" class="mt-2 self-start">Explore our Options</AppButton>
+          <AppButton to="/built-for-you" class="mt-2 self-start">Explore our options</AppButton>
         </div>
       </div>
     </section>
@@ -608,11 +594,15 @@ const faqs: FaqItem[] = [
 }
 @media (min-width: 768px) {
   .orbit {
-    /* desktop: unchanged from the original 0.9 scale (cards 246×327, radius 437) */
-    --rad: 437px;
-    --cw: 246px;
-    --ch: 327px;
-    left: -24px;
+    /* desktop: based on the Figma ring (node 18491:463564 — radius 499, cards
+       273×363, centre ~12px off the left edge), but the radius is pushed out further
+       so the arc's waist bulges closer to the copy (the orbit is anchored to the
+       viewport's left edge while the text sits in the centred column, so a plain
+       Figma radius leaves too wide a gap on real desktop widths). */
+    --rad: 588px;
+    --cw: 288px;
+    --ch: 384px;
+    left: -12px;
   }
 }
 @keyframes orbit-spin {

@@ -11,10 +11,13 @@ const socials = [
 
 <template>
   <footer class="relative overflow-hidden bg-yellow-50 px-5 pb-12 pt-14 md:px-6">
-    <!-- Desktop CUSTOM/BRANDING — sit at the nav-links row, inset ~12.5% to line up
-         with the content column edges. Hidden on mobile (rendered inline below). -->
-    <span class="corner-label absolute z-20 hidden -translate-y-1/2 md:block md:left-[12.5%] md:top-[calc(100%-150px)]">CUSTOM</span>
-    <span class="corner-label absolute z-20 hidden -translate-y-1/2 md:block md:right-[12.5%] md:top-[calc(100%-150px)]">BRANDING</span>
+    <!-- Desktop CUSTOM/BRANDING — pinned to the content-column edges (spread far
+         out to the sides, symmetric about centre) but held at the polaroid's
+         vertical mid-line, so they sit far from the centred image yet stay
+         centre-aligned with it. The max() clamp keeps them inside the footer
+         padding on narrower desktops. Hidden on mobile (rendered inline below). -->
+    <span class="corner-label absolute z-20 hidden -translate-y-1/2 md:block md:left-[max(24px,calc(50%-540px))] md:top-[167px]">CUSTOM</span>
+    <span class="corner-label absolute z-20 hidden -translate-y-1/2 md:block md:right-[max(24px,calc(50%-540px))] md:top-[167px]">BRANDING</span>
     <!-- Mobile CUSTOM/BRANDING — flank the polaroid, pinned to the footer edges.
          The polaroid is narrow on mobile so the labels never overlap it. -->
     <span class="corner-label absolute left-4 top-[132px] z-20 md:hidden">CUSTOM</span>
