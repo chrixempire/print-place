@@ -24,7 +24,7 @@ onMounted(() => {
     yTo(e.clientY)
     const hot = (e.target as HTMLElement)?.closest?.('a, button, [role="button"], [data-cursor], input, textarea, label')
     gsap.to(el, {
-      scale: hot ? 1.9 : 1,
+      scale: hot ? 1.7 : 1,
       backgroundColor: hot ? 'rgba(255,79,41,0.14)' : 'rgba(255,79,41,0)',
       borderColor: hot ? '#ff4f29' : 'rgba(255,79,41,0.55)',
       duration: 0.28,
