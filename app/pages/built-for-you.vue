@@ -112,23 +112,29 @@ onMounted(() => {
   const { gsap, reduced } = useGsap()
   if (reduced || !stackRoot.value) return
   const cards = Array.from(stackRoot.value.querySelectorAll<HTMLElement>('.stack-card'))
-  const ctx = gsap.context(() => {
+  // Dim every covered card as the next climbs over. On MOBILE also blur it, so the
+  // buried card's peeking edge (which bleeds through the row's internal image↔content
+  // gap when the deck piles up) defocuses. On desktop the cards read as one wide
+  // row with no such gap, so it stays dim-only — no blur.
+  const mm = gsap.matchMedia()
+  mm.add({ mobile: '(max-width: 767px)', desktop: '(min-width: 768px)' }, (c) => {
+    const mobile = c.conditions!.mobile
     cards.forEach((card, i) => {
       const next = cards[i + 1]
       if (!next) return // last card is never covered — it stays fully lit
       gsap.set(card, { willChange: 'filter' })
       gsap.fromTo(
         card,
-        { filter: 'brightness(1)' },
+        { filter: mobile ? 'brightness(1) blur(0px)' : 'brightness(1)' },
         {
-          filter: 'brightness(0.82)',
+          filter: mobile ? 'brightness(0.82) blur(2px)' : 'brightness(0.82)',
           ease: 'none',
           scrollTrigger: { trigger: next, start: 'top 90%', end: 'top 22%', scrub: 0.4 },
         },
       )
     })
-  }, stackRoot.value)
-  onBeforeUnmount(() => ctx.revert())
+  })
+  onBeforeUnmount(() => mm.revert())
 })
 </script>
 
