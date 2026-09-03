@@ -271,8 +271,12 @@ const budgetImgs = [
   '/img/about/budget/g5.webp',
   '/img/about/budget/g6.webp',
 ]
-// 12 slots (30° apart) — matches the Figma arc; big cards overlap slightly while rotating
+// Desktop: 12 slots (30° apart) — matches the Figma desktop arc.
 const budgetOrbit = [...budgetImgs, ...budgetImgs]
+// Mobile (< 1015px): 18 slots (20° apart) — a denser ring so each card can stay a
+// moderate size AND overlap its neighbour by only ~20% (each shows ~80%), while the
+// radius still reaches the wall. Desktop keeps its own 12-card ring.
+const budgetOrbitMobile = [...budgetImgs, ...budgetImgs, ...budgetImgs]
 // Pause the spin whenever the pointer is anywhere over the gallery column
 // (JS toggle — more reliable than CSS :hover across the clipped, overflowing cards).
 const orbitPaused = ref(false)
@@ -521,7 +525,7 @@ const faqs: FaqItem[] = [
     </section>
 
     <!-- BUDGET -->
-    <section class="relative overflow-hidden bg-neutral-500">
+    <section id="budget" class="budget relative overflow-hidden bg-neutral-500">
       <!-- rotating circular gallery — fills the section so the cards arc AROUND the
            copy (left-centre on mobile, left column on desktop). -->
       <div
@@ -529,10 +533,24 @@ const faqs: FaqItem[] = [
         @pointerenter="orbitPaused = true"
         @pointerleave="orbitPaused = false"
       >
-        <div class="orbit" :class="{ 'orbit-paused': orbitPaused }">
+        <!-- Mobile ring (18 cards, denser so each shows ~80%); hidden on desktop -->
+        <div class="orbit min-[1015px]:hidden" :class="{ 'orbit-paused': orbitPaused }">
+          <div
+            v-for="(src, i) in budgetOrbitMobile"
+            :key="`m${i}`"
+            class="orbit-item"
+            :style="{ '--a': (i * (360 / budgetOrbitMobile.length)) + 'deg' }"
+          >
+            <div class="orbit-card">
+              <img :src="src" alt="Branded product sample from Printplaceng" loading="lazy" decoding="async" class="size-full object-cover" draggable="false" />
+            </div>
+          </div>
+        </div>
+        <!-- Desktop ring (12 cards, Figma arc); hidden on mobile -->
+        <div class="orbit hidden min-[1015px]:block" :class="{ 'orbit-paused': orbitPaused }">
           <div
             v-for="(src, i) in budgetOrbit"
-            :key="i"
+            :key="`d${i}`"
             class="orbit-item"
             :style="{ '--a': (i * (360 / budgetOrbit.length)) + 'deg' }"
           >
@@ -544,15 +562,15 @@ const faqs: FaqItem[] = [
       </div>
       <!-- mobile scrim: darkens the copy's corner so it stays legible over the
            moving cards (desktop keeps the copy in the clear right column) -->
-      <div class="pointer-events-none absolute inset-0 z-[5] bg-[radial-gradient(circle_at_10%_50%,rgba(7,6,7,0.95),rgba(7,6,7,0.7)_40%,transparent_64%)] md:hidden"></div>
+      <div class="pointer-events-none absolute inset-0 z-[5] bg-[radial-gradient(circle_at_22%_50%,rgba(7,6,7,0.85),rgba(7,6,7,0.5)_30%,transparent_55%)] min-[1015px]:hidden"></div>
       <!-- copy -->
-      <div class="relative z-10 mx-auto flex min-h-[640px] max-w-[1280px] items-center px-5 md:min-h-[820px] md:px-6">
-        <div class="flex max-w-[290px] flex-col gap-3 md:ml-auto md:max-w-[446px]">
-          <h2 v-words class="text-[36px] font-bold leading-[1.05] tracking-[-1.2px] text-white md:text-[50px] md:leading-[50px] md:tracking-[-1.5px]">
+      <div class="budget-copy relative z-10 mx-auto flex min-h-[min(216.7vw,1480px)] max-w-[1280px] items-center min-[1015px]:mx-0 min-[1015px]:min-h-[900px] min-[1015px]:max-w-none">
+        <div class="flex max-w-[269px] flex-col gap-2.5 min-[1015px]:max-w-[clamp(240px,31vw,446px)] min-[1015px]:gap-3">
+          <h2 v-words class="text-[28px] font-bold leading-[36px] tracking-[-0.84px] text-white min-[1015px]:text-[50px] min-[1015px]:leading-[50px] min-[1015px]:tracking-[-1.5px]">
             Stop guessing your merch budget
           </h2>
-          <p v-anim:up="200" class="text-[18px] text-gray-500">We’ve already done the maths for you</p>
-          <AppButton to="/built-for-you" class="mt-2 self-start">Explore our options</AppButton>
+          <p v-anim:up="200" class="text-[16px] text-gray-500 min-[1015px]:text-[18px]">We’ve already done the maths for you</p>
+          <AppButton to="/built-for-you" class="self-start">Explore our options</AppButton>
         </div>
       </div>
     </section>
@@ -580,29 +598,61 @@ const faqs: FaqItem[] = [
    radius and card size are set independently so the mobile ring can be large
    enough to wrap AROUND the copy without oversizing the cards. */
 .orbit {
-  /* mobile: a big ring so the arc reaches the top/right/bottom edges and the copy
-     sits in the clear left-centre */
-  --rad: 432px;
-  --cw: 168px;
-  --ch: 224px;
+  /* Mobile / tablet (< 1015px): a SEMICIRCLE arc on the RIGHT that wraps around the
+     copy (which sits at the left, vertically centred) — matching the Figma mobile frame
+     (390×845, node 18491:464410): ring centre low-left (~23% / 76%), radius ~579, cards
+     ~207×275, scaled gently for other phone sizes. The full ring rotates but its left
+     half stays off-screen, so only the right arc shows and never covers the copy. */
+  --rad: clamp(380px, 107.4vw, 730px);
+  /* 18 cards sit 20° apart, so the arc-distance between neighbours is rad·0.349.
+     Sizing each card's tangential extent (--cw) to rad·0.4363 makes that distance
+     ≈80% of the card, i.e. neighbours overlap ~20% and each card shows ~80% — at
+     every width, since both track the radius. --ch keeps the Figma 207:275 aspect. */
+  --cw: calc(var(--rad) * 0.4363);
+  --ch: calc(var(--cw) * 1.329);
   position: absolute;
-  left: -60px; /* ring centre just off the left edge → cards arc on the right */
-  top: 50%;
+  left: 9.8%; /* ring centre near the left edge → cards arc on the right, around the copy */
+  top: 56.7%;
   width: 0;
   height: 0;
   animation: orbit-spin 70s linear infinite;
 }
-@media (min-width: 768px) {
+/* Copy column horizontal padding lives here (not Tailwind) so the desktop
+   padding-left can be derived from the orbit vars without a specificity war. */
+.budget-copy {
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+}
+@media (min-width: 1015px) {
+  /* Desktop orbit geometry — a SEMICIRCLE, not a full ring: the ring centre sits
+     just inside the viewport's left edge (--orbit-left), so the ring's left half
+     (and its hollow centre) is clipped off-screen and only the right-facing arc
+     shows. Everything is FLUID (scales with viewport width) so the semicircle and
+     copy shrink together on small desktops and never clip, while hitting the exact
+     Figma frame (node 18491:463564, 1440×900) at 1440px: radius 486 (33.75vw),
+     cards 273×363, gap 144 — arc's right edge ~699px, copy at ~844px. Values are
+     capped so ultrawide keeps a sensible size rather than ballooning. */
+  .budget {
+    --orbit-left: 32px;
+    --orbit-rad: clamp(260px, 33.75vw, 560px);
+    --orbit-cw: clamp(190px, 19vw, 300px);
+    --orbit-ch: clamp(252px, 25.2vw, 399px);
+    --orbit-gap: clamp(56px, 10vw, 156px);
+  }
   .orbit {
-    /* desktop: based on the Figma ring (node 18491:463564 — radius 499, cards
-       273×363, centre ~12px off the left edge), but the radius is pushed out further
-       so the arc's waist bulges closer to the copy (the orbit is anchored to the
-       viewport's left edge while the text sits in the centred column, so a plain
-       Figma radius leaves too wide a gap on real desktop widths). */
-    --rad: 588px;
-    --cw: 288px;
-    --ch: 384px;
-    left: -12px;
+    --rad: var(--orbit-rad);
+    --cw: var(--orbit-cw);
+    --ch: var(--orbit-ch);
+    left: var(--orbit-left);
+    top: 50%; /* desktop: ring centre at vertical middle (mobile uses 76%) */
+  }
+  /* Cards are turned +90°, so at the arc's waist the horizontal half-extent is
+     ch/2. Place the copy --orbit-gap to the right of that edge. Because both the
+     orbit and this padding derive from the same fluid vars, the arc→text gap holds
+     proportionally at every width (≈144px @1440, matching Figma). */
+  .budget-copy {
+    padding-left: calc(var(--orbit-left) + var(--orbit-rad) + var(--orbit-ch) / 2 + var(--orbit-gap));
+    padding-right: 1.5rem;
   }
 }
 @keyframes orbit-spin {
