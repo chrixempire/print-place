@@ -7,31 +7,54 @@ useSeo({
     'Printplaceng is Lagos’ custom merch and branding partner — premium branded t-shirts, mugs, tote bags, packaging and print, delivered with structure and speed. Get a quote today.',
 })
 
-// Hero collage marquee. Two groups of three small product shots alternate, each
-// followed by a big (portrait-cropped) gallery photo — A, g1, B, g2, A, g3, B, g4
-// — then the whole strip loops seamlessly to the left (see buildCollageLoop).
-type CollageCard = { src: string; w: number; h: number; big?: boolean }
+// Hero collage marquee. Figma 18491:463652 — each card is a fixed frame with a
+// larger inner photo positioned inside (overflow hidden), all seated on items-end.
+type CollageCrop = { iw: number; ih: number; ox?: number; oy?: number; anchor?: 'center' | 'bottom' }
+type CollageCard = { src: string; w: number; h: number; big?: boolean; crop?: CollageCrop }
+
+const heroCropStyle = (crop: CollageCrop) => {
+  const base = {
+    width: `calc(${crop.iw} * var(--s) * 1px)`,
+    height: `calc(${crop.ih} * var(--s) * 1px)`,
+    left: crop.ox != null ? `calc(50% + calc(var(--s) * ${crop.ox}px))` : '50%',
+  }
+  if (crop.anchor === 'bottom') {
+    return { ...base, bottom: 0, transform: 'translateX(-50%)' }
+  }
+  return {
+    ...base,
+    top: crop.oy != null ? `calc(50% + calc(var(--s) * ${crop.oy}px))` : '50%',
+  }
+}
+
+const heroCropClass = (crop: CollageCrop) =>
+  crop.anchor === 'bottom'
+    ? 'pointer-events-none absolute'
+    : 'pointer-events-none absolute -translate-x-1/2 -translate-y-1/2'
+
 const smallA: CollageCard[] = [
-  { src: '/img/about/hero/h1.webp', w: 194, h: 248 },
-  { src: '/img/about/hero/h2.webp', w: 194, h: 338 },
-  { src: '/img/about/hero/h3.webp', w: 231, h: 286 },
+  { src: '/img/about/hero/h1.webp', w: 194, h: 248, crop: { iw: 207, ih: 368, ox: 0.5 } },
+  { src: '/img/about/hero/h2.webp', w: 194, h: 338, crop: { iw: 276, ih: 345, ox: -29, oy: 0.5 } },
+  { src: '/img/about/hero/h3.webp', w: 231, h: 286, crop: { iw: 244.667, ih: 367, ox: -0.17, oy: 0.5 } },
 ]
 const smallB: CollageCard[] = [
-  { src: '/img/about/hero/h5.webp', w: 181, h: 228 },
-  { src: '/img/about/hero/h6.webp', w: 188, h: 266 },
-  { src: '/img/about/hero/h7.webp', w: 151, h: 173 },
+  { src: '/img/about/hero/h5.webp', w: 181, h: 228, crop: { iw: 202.667, ih: 304, ox: 0.5 } },
+  { src: '/img/about/hero/h6.png', w: 188, h: 266, crop: { iw: 206.242, ih: 306, ox: 0.12, anchor: 'bottom' } },
+  { src: '/img/about/hero/h7.webp', w: 151, h: 173, crop: { iw: 180.061, ih: 240, ox: -0.47, oy: 0.5 } },
 ]
-// Width matches the gallery photos' 3:2 ratio at h=437 so the full image shows
-// (no crop); small cards keep their own widths.
-const bigGallery = (n: number): CollageCard => ({ src: `/img/gallery/gallery-${n}.webp`, w: 656, h: 437, big: true })
+// Gallery photos fill their frame edge-to-edge (3:2 at h=437) — no inner crop.
+const bigGallery = (n: number): CollageCard => ({
+  src: `/img/gallery/gallery-${n}.webp`,
+  w: 656,
+  h: 437,
+  big: true,
+})
 const heroCollage = [
   ...smallA, bigGallery(1),
   ...smallB, bigGallery(2),
   ...smallA, bigGallery(3),
   ...smallB, bigGallery(4),
 ]
-// Rendered twice while the marquee is active so the loop has an identical second
-// copy to wrap into with no visible seam.
 const heroLoop = computed(() => (marquee.value ? [...heroCollage, ...heroCollage] : heroCollage))
 
 // Icons are inlined (not <img>) so their stroke follows `currentColor` — the icon
@@ -230,20 +253,20 @@ onMounted(async () => {
       .fromTo(q('[data-hero=sub]'), { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8 }, 0.15)
       .fromTo(q('.hero-cta'), { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, clearProps: 'transform' }, 0.3)
       // The collage fades/rises in as one block; the flow itself carries the cards.
-      .fromTo(q('.hero-collage'), { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.9 }, 0.3)
-      // Each card gets ONE soft settle-bounce as it arrives, then rests at y:0 and
-      // simply rides the horizontal scroll — no continuous bobbing.
+      .fromTo(q('.hero-collage'), { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.9, clearProps: 'transform' }, 0.3)
+      // One settle-bounce on the whole strip (not per card — per-card transforms
+      // were leaving individual images visually lifted off the bottom line).
       .fromTo(
-        q('.hero-card'),
-        { y: 20 },
-        { y: 0, duration: 1, ease: 'elastic.out(1, 0.55)', stagger: { each: 0.035, from: 'start' } },
+        q('.hero-collage-track'),
+        { scale: 0.94, transformOrigin: 'center bottom' },
+        {
+          scale: 1,
+          duration: 1.1,
+          ease: 'elastic.out(1, 0.55)',
+          clearProps: 'scale',
+        },
         0.45,
       )
-    gsap.to(q('.hero-collage'), {
-      yPercent: -6,
-      ease: 'none',
-      scrollTrigger: { trigger: heroRoot.value, start: 'top top', end: 'bottom top', scrub: true },
-    })
   }, heroRoot.value)
   buildCollageLoop()
   window.addEventListener('resize', onCollageResize)
@@ -261,8 +284,7 @@ const brands = [
   '/img/about/brands/b7.webp', '/img/about/brands/b8.webp', '/img/about/brands/korapay.webp',
 ]
 
-// "Stop guessing" — product photos placed around a big circle whose centre is
-// off to the right, so they sit on the visible left arc and rotate around it.
+// "Stop guessing" — same continuous ring on mobile + desktop (12 cards, g1–g6 ×2).
 const budgetImgs = [
   '/img/about/budget/g1.webp',
   '/img/about/budget/g2.webp',
@@ -271,12 +293,7 @@ const budgetImgs = [
   '/img/about/budget/g5.webp',
   '/img/about/budget/g6.webp',
 ]
-// Desktop: 12 slots (30° apart) — matches the Figma desktop arc.
 const budgetOrbit = [...budgetImgs, ...budgetImgs]
-// Mobile (< 1015px): 18 slots (20° apart) — a denser ring so each card can stay a
-// moderate size AND overlap its neighbour by only ~20% (each shows ~80%), while the
-// radius still reaches the wall. Desktop keeps its own 12-card ring.
-const budgetOrbitMobile = [...budgetImgs, ...budgetImgs, ...budgetImgs]
 // Pause the spin whenever the pointer is anywhere over the gallery column
 // (JS toggle — more reliable than CSS :hover across the clipped, overflowing cards).
 const orbitPaused = ref(false)
@@ -293,7 +310,7 @@ const faqs: FaqItem[] = [
 <template>
   <div>
     <!-- HERO -->
-    <section ref="heroRoot" class="overflow-hidden bg-neutral-500 px-5 pt-16 md:pt-20">
+    <section ref="heroRoot" class="flex flex-col overflow-hidden bg-neutral-500 px-5 pb-0 pt-16 md:pt-20">
       <div class="mx-auto flex max-w-[640px] flex-col items-center gap-4 text-center">
         <h1 data-hero="title" data-anim class="text-[36px] font-bold leading-[1.02] tracking-[-1.2px] text-white sm:text-[56px] md:text-[64px] md:leading-[64px] md:tracking-[-1.92px]">
           Your custom merch branding <span class="text-coral-500">partner</span>
@@ -309,7 +326,7 @@ const faqs: FaqItem[] = [
            edge of the viewport. No mask — the carousel spans the whole screen. -->
       <div
         data-anim
-        class="hero-collage relative -mx-5 mt-12 w-[calc(100%+2.5rem)] pb-0 [--s:0.6] md:mt-16 md:[--s:1]"
+        class="hero-collage relative -mx-5 mt-12 w-[calc(100%+2.5rem)] [--s:0.6] md:mt-16 md:[--s:1]"
         :class="marquee
           ? 'overflow-hidden'
           : 'overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'"
@@ -320,17 +337,33 @@ const faqs: FaqItem[] = [
       >
         <div
           ref="collageTrack"
-          class="flex w-max items-end gap-3 md:gap-5"
+          class="hero-collage-track flex w-max items-end"
           :class="marquee ? 'will-change-transform' : 'justify-start'"
         >
           <div
             v-for="(img, i) in heroLoop"
             :key="i"
             :aria-hidden="i >= heroCollage.length ? 'true' : undefined"
-            class="hero-card group h-[calc(var(--h)*var(--s)*1px)] w-[calc(var(--w)*var(--s)*1px)] shrink-0 overflow-hidden rounded-[2px] bg-white"
-            :style="{ '--w': img.w, '--h': img.h }"
+            class="hero-card group relative shrink-0 overflow-hidden rounded-[2px] bg-white"
+            :style="{
+              width: `calc(${img.w} * var(--s) * 1px)`,
+              height: `calc(${img.h} * var(--s) * 1px)`,
+            }"
           >
+            <div
+              v-if="img.crop"
+              :class="heroCropClass(img.crop)"
+              :style="heroCropStyle(img.crop)"
+            >
+              <img
+                :src="img.src"
+                :alt="img.big ? 'Printplaceng brand campaign' : 'Custom branded merchandise by Printplaceng'"
+                class="pointer-events-none absolute inset-0 size-full max-w-none object-cover transition-transform duration-[600ms] ease-out group-hover:scale-110"
+                :class="img.crop.anchor === 'bottom' ? 'object-bottom' : ''"
+              />
+            </div>
             <img
+              v-else
               :src="img.src"
               :alt="img.big ? 'Printplaceng brand campaign' : 'Custom branded merchandise by Printplaceng'"
               class="size-full object-cover transition-transform duration-[600ms] ease-out group-hover:scale-110"
@@ -343,8 +376,15 @@ const faqs: FaqItem[] = [
     <!-- PROCESS -->
     <section class="bg-stone-500 px-5 py-16 md:px-6 md:py-24">
       <div class="mx-auto flex max-w-[1080px] flex-col items-center gap-10 md:flex-row md:items-center md:gap-12">
-        <div v-curtain class="group w-full overflow-hidden rounded-2xl md:w-[532px] md:shrink-0">
-          <img src="/img/about/process.webp" alt="Our process" loading="lazy" decoding="async" class="h-[300px] w-full object-cover transition-transform duration-[700ms] ease-out group-hover:scale-[1.04] md:h-[606px]" />
+        <!-- Figma 18491:463453 — 532×606, 16px radius on all corners -->
+        <div class="process-photo md:w-[532px] md:shrink-0">
+          <img
+            src="/img/about/process.png"
+            alt="Our process"
+            loading="lazy"
+            decoding="async"
+            class="process-photo__img"
+          />
         </div>
         <div class="w-full md:flex-1">
           <h2 v-words class="text-[32px] font-bold leading-tight tracking-[-1px] text-neutral-500 md:text-[46px] md:leading-[50px] md:tracking-[-1.38px]">
@@ -525,32 +565,16 @@ const faqs: FaqItem[] = [
     </section>
 
     <!-- BUDGET -->
-    <section id="budget" class="budget relative overflow-hidden bg-neutral-500">
-      <!-- rotating circular gallery — fills the section so the cards arc AROUND the
-           copy (left-centre on mobile, left column on desktop). -->
+    <section id="budget" class="budget relative overflow-hidden bg-[#070607] min-[1015px]:bg-neutral-500">
       <div
-        class="orbit-viewport absolute inset-0 z-0"
+        class="budget-gallery"
         @pointerenter="orbitPaused = true"
         @pointerleave="orbitPaused = false"
       >
-        <!-- Mobile ring (18 cards, denser so each shows ~80%); hidden on desktop -->
-        <div class="orbit min-[1015px]:hidden" :class="{ 'orbit-paused': orbitPaused }">
-          <div
-            v-for="(src, i) in budgetOrbitMobile"
-            :key="`m${i}`"
-            class="orbit-item"
-            :style="{ '--a': (i * (360 / budgetOrbitMobile.length)) + 'deg' }"
-          >
-            <div class="orbit-card">
-              <img :src="src" alt="Branded product sample from Printplaceng" loading="lazy" decoding="async" class="size-full object-cover" draggable="false" />
-            </div>
-          </div>
-        </div>
-        <!-- Desktop ring (12 cards, Figma arc); hidden on mobile -->
-        <div class="orbit hidden min-[1015px]:block" :class="{ 'orbit-paused': orbitPaused }">
+        <div class="orbit" :class="{ 'orbit-paused': orbitPaused }">
           <div
             v-for="(src, i) in budgetOrbit"
-            :key="`d${i}`"
+            :key="i"
             class="orbit-item"
             :style="{ '--a': (i * (360 / budgetOrbit.length)) + 'deg' }"
           >
@@ -560,16 +584,22 @@ const faqs: FaqItem[] = [
           </div>
         </div>
       </div>
-      <!-- mobile scrim: darkens the copy's corner so it stays legible over the
-           moving cards (desktop keeps the copy in the clear right column) -->
-      <div class="pointer-events-none absolute inset-0 z-[5] bg-[radial-gradient(circle_at_22%_50%,rgba(7,6,7,0.85),rgba(7,6,7,0.5)_30%,transparent_55%)] min-[1015px]:hidden"></div>
-      <!-- copy -->
-      <div class="budget-copy relative z-10 mx-auto flex min-h-[min(216.7vw,1480px)] max-w-[1280px] items-center min-[1015px]:mx-0 min-[1015px]:min-h-[900px] min-[1015px]:max-w-none">
-        <div class="flex max-w-[269px] flex-col gap-2.5 min-[1015px]:max-w-[clamp(240px,31vw,446px)] min-[1015px]:gap-3">
-          <h2 v-words class="text-[28px] font-bold leading-[36px] tracking-[-0.84px] text-white min-[1015px]:text-[50px] min-[1015px]:leading-[50px] min-[1015px]:tracking-[-1.5px]">
+      <!-- Mobile copy — Figma 464424 -->
+      <div class="budget-copy-mobile">
+        <h2 v-words class="text-[28px] font-bold leading-[36px] tracking-[-0.84px] text-white">
+          <span class="block">Stop guessing</span>
+          <span class="block">your merch budget</span>
+        </h2>
+        <p v-anim:up="200" class="text-[16px] text-[#e2e2df]">We’ve already done the maths for you</p>
+        <AppButton to="/built-for-you" class="self-start">Explore our options</AppButton>
+      </div>
+      <!-- Desktop copy -->
+      <div class="budget-copy">
+        <div class="flex max-w-[clamp(240px,31vw,446px)] flex-col gap-3">
+          <h2 v-words class="text-[50px] font-bold leading-[50px] tracking-[-1.5px] text-white">
             Stop guessing your merch budget
           </h2>
-          <p v-anim:up="200" class="text-[16px] text-gray-500 min-[1015px]:text-[18px]">We’ve already done the maths for you</p>
+          <p v-anim:up="200" class="text-[18px] text-gray-500">We’ve already done the maths for you</p>
           <AppButton to="/built-for-you" class="self-start">Explore our options</AppButton>
         </div>
       </div>
@@ -592,46 +622,124 @@ const faqs: FaqItem[] = [
 </template>
 
 <style scoped>
-/* Rotating circular gallery ("Stop guessing your merch budget") — Figma 18491:463564.
-   Cards sit on a right-facing arc, ring centre just off the left edge, each card
-   turned +90° so the product's top points tangentially as the ring rotates. The
-   radius and card size are set independently so the mobile ring can be large
-   enough to wrap AROUND the copy without oversizing the cards. */
-.orbit {
-  /* Mobile / tablet (< 1015px): a SEMICIRCLE arc on the RIGHT that wraps around the
-     copy (which sits at the left, vertically centred) — matching the Figma mobile frame
-     (390×845, node 18491:464410): ring centre low-left (~23% / 76%), radius ~579, cards
-     ~207×275, scaled gently for other phone sizes. The full ring rotates but its left
-     half stays off-screen, so only the right arc shows and never covers the copy. */
-  --rad: clamp(380px, 107.4vw, 730px);
-  /* 18 cards sit 20° apart, so the arc-distance between neighbours is rad·0.349.
-     Sizing each card's tangential extent (--cw) to rad·0.4363 makes that distance
-     ≈80% of the card, i.e. neighbours overlap ~20% and each card shows ~80% — at
-     every width, since both track the radius. --ch keeps the Figma 207:275 aspect. */
-  --cw: calc(var(--rad) * 0.4363);
-  --ch: calc(var(--cw) * 1.329);
+/* Hero collage — cards share one bottom edge; no extra black band below the row. */
+.hero-collage {
+  display: block;
+  margin-bottom: 0;
+  padding-bottom: 0;
+  font-size: 0;
+  line-height: 0;
+}
+.hero-collage-track {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  gap: calc(var(--s) * 20px);
+}
+.hero-card {
+  flex: 0 0 auto;
+  align-self: flex-end;
+  line-height: 0;
+}
+.hero-card img {
+  display: block;
+}
+
+/* Process photo — Figma 18491:463453. clip-path round is the reliable clip;
+   no transforms on the image (they break bottom corner radius in WebKit). */
+.process-photo {
+  position: relative;
+  width: 100%;
+  height: 300px;
+  overflow: hidden;
+  border-radius: 16px;
+  clip-path: inset(0 round 16px);
+  -webkit-clip-path: inset(0 round 16px);
+  transform: translateZ(0);
+}
+@media (min-width: 768px) {
+  .process-photo {
+    width: 532px;
+    height: 606px;
+  }
+}
+.process-photo__img {
   position: absolute;
-  left: 9.8%; /* ring centre near the left edge → cards arc on the right, around the copy */
-  top: 56.7%;
-  width: 0;
-  height: 0;
-  animation: orbit-spin 70s linear infinite;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  object-position: center;
+  pointer-events: none;
 }
-/* Copy column horizontal padding lives here (not Tailwind) so the desktop
-   padding-left can be derived from the orbit vars without a specificity war. */
+
+/* Budget — one continuous ring (marquee-style spin), mobile + desktop */
+.budget {
+  --b: calc(100vw / 390px);
+  --orbit-left: calc(39px * var(--b));
+  --orbit-rad: calc(318px * var(--b));
+  --orbit-cw: calc(160px * var(--b));
+  --orbit-ch: calc(213px * var(--b));
+}
+
+.budget-gallery {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.budget-copy-mobile {
+  position: absolute;
+  left: calc(16px * var(--b));
+  top: calc(340px * var(--b));
+  z-index: 10;
+  display: flex;
+  width: calc(269px * var(--b));
+  flex-direction: column;
+  gap: calc(10px * var(--b));
+}
 .budget-copy {
-  padding-left: 1.25rem;
-  padding-right: 1.25rem;
+  display: none;
 }
+
+@media (max-width: 1014px) {
+  .budget {
+    height: calc(610px * var(--b));
+    /* Tight radius + overlapping cards → compact semicircle */
+    --orbit-rad: calc(298px * var(--b));
+    --orbit-cw: calc(130px * var(--b));
+    --orbit-ch: calc(173px * var(--b));
+  }
+  .budget-copy-mobile {
+    top: calc(246px * var(--b));
+  }
+}
+
+/* 600–1014px: 10% smaller than full scale */
+@media (min-width: 600px) and (max-width: 1014px) {
+  .budget {
+    --orbit-rad: calc(298px * var(--b) * 0.9);
+    --orbit-cw: calc(130px * var(--b) * 0.9);
+    --orbit-ch: calc(173px * var(--b) * 0.9);
+  }
+}
+
 @media (min-width: 1015px) {
-  /* Desktop orbit geometry — a SEMICIRCLE, not a full ring: the ring centre sits
-     just inside the viewport's left edge (--orbit-left), so the ring's left half
-     (and its hollow centre) is clipped off-screen and only the right-facing arc
-     shows. Everything is FLUID (scales with viewport width) so the semicircle and
-     copy shrink together on small desktops and never clip, while hitting the exact
-     Figma frame (node 18491:463564, 1440×900) at 1440px: radius 486 (33.75vw),
-     cards 273×363, gap 144 — arc's right edge ~699px, copy at ~844px. Values are
-     capped so ultrawide keeps a sensible size rather than ballooning. */
+  .budget-copy-mobile {
+    display: none;
+  }
+  .budget-copy {
+    display: flex;
+    position: relative;
+    z-index: 10;
+    min-height: 900px;
+    align-items: center;
+    padding-right: 1.5rem;
+    padding-left: calc(var(--orbit-left) + var(--orbit-rad) + var(--orbit-ch) / 2 + var(--orbit-gap));
+  }
   .budget {
     --orbit-left: 32px;
     --orbit-rad: clamp(260px, 33.75vw, 560px);
@@ -639,28 +747,28 @@ const faqs: FaqItem[] = [
     --orbit-ch: clamp(252px, 25.2vw, 399px);
     --orbit-gap: clamp(56px, 10vw, 156px);
   }
-  .orbit {
-    --rad: var(--orbit-rad);
-    --cw: var(--orbit-cw);
-    --ch: var(--orbit-ch);
-    left: var(--orbit-left);
-    top: 50%; /* desktop: ring centre at vertical middle (mobile uses 76%) */
-  }
-  /* Cards are turned +90°, so at the arc's waist the horizontal half-extent is
-     ch/2. Place the copy --orbit-gap to the right of that edge. Because both the
-     orbit and this padding derive from the same fluid vars, the arc→text gap holds
-     proportionally at every width (≈144px @1440, matching Figma). */
-  .budget-copy {
-    padding-left: calc(var(--orbit-left) + var(--orbit-rad) + var(--orbit-ch) / 2 + var(--orbit-gap));
-    padding-right: 1.5rem;
-  }
+}
+
+.orbit {
+  --rad: var(--orbit-rad);
+  --cw: var(--orbit-cw);
+  --ch: var(--orbit-ch);
+  position: absolute;
+  left: var(--orbit-left);
+  top: 50%;
+  width: 0;
+  height: 0;
+  will-change: transform;
+  animation: orbit-spin 70s linear infinite;
 }
 @keyframes orbit-spin {
+  from {
+    transform: rotate(0deg);
+  }
   to {
     transform: rotate(360deg);
   }
 }
-/* Pause whenever the pointer is anywhere over the gallery column (JS-toggled) */
 .orbit.orbit-paused {
   animation-play-state: paused;
 }

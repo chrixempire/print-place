@@ -187,6 +187,9 @@ body {
 .anim-ready [data-curtain] {
   clip-path: inset(0 0 100% 0);
 }
+.anim-ready [data-curtain][data-curtain-r='16'] {
+  clip-path: inset(0 0 100% 0 round 16px);
+}
 
 /* Trailing cursor ring (see app/components/AppCursor.vue) — desktop + motion only */
 .app-cursor {

@@ -124,12 +124,12 @@ onBeforeUnmount(stop)
       <button
         v-for="(p, i) in products"
         :key="p.name"
-        class="absolute left-1/2 top-1/2 w-[260px] transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform sm:w-[300px] md:w-[340px]"
+        class="absolute left-1/2 top-1/2 w-[260px] transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform sm:w-[300px] md:w-[352px]"
         :style="cardStyle(i)"
         :aria-label="`Show ${p.name}`"
         @click="onCardClick(i)"
       >
-        <ProductCard :product="p" />
+        <ProductCard :product="p" :flippable="i === active" :featured="i === active" />
       </button>
     </div>
 

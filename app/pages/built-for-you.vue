@@ -64,7 +64,7 @@ const bundles: Bundle[] = [
 const products: Product[] = [
   { image: '/img/products/tshirt.webp', name: 'T-shirt', price: 'N7,000' },
   { image: '/img/products/facecap.webp', name: 'Face cap', price: 'N4,000' },
-  { image: '/img/products/thermal.webp', name: 'Thermal Bottles', price: 'N7,500' },
+  { image: '/img/products/thermal.png', name: 'Thermal Bottles', price: 'N7,500', crop: { iw: 375.837, ih: 527.5, ox: -0.08, oy: 0.25 } },
   { image: '/img/products/tote.webp', name: 'Tote bag', price: 'N5,000' },
   { image: '/img/products/umbrella.webp', name: 'Umbrella', price: 'N9,000' },
   { image: '/img/products/journal.webp', name: 'Spiral Journals', price: 'N1,000' },

@@ -223,25 +223,30 @@ export default defineNuxtPlugin((nuxtApp) => {
   // v-curtain — clip-path wipe reveal (top→down by default) for big images
   //   v-curtain        wipe down     v-curtain.up  wipe up
   //   v-curtain.left / .right        wipe sideways
+  //   v-curtain="16"   preserve corner radius (px) through the wipe
   app.directive('curtain', {
     ...noop,
     mounted(el: HTMLElement, binding) {
       if (!import.meta.client || isReduced()) return
       const m = binding.modifiers || {}
+      const radius = typeof binding.value === 'number' ? binding.value : 0
+      const round = radius ? ` round ${radius}px` : ''
       const hidden = m.up
-        ? 'inset(100% 0 0 0)'
+        ? `inset(100% 0 0 0${round})`
         : m.left
-          ? 'inset(0 100% 0 0)'
+          ? `inset(0 100% 0 0${round})`
           : m.right
-            ? 'inset(0 0 0 100%)'
-            : 'inset(0 0 100% 0)'
+            ? `inset(0 0 0 100%${round})`
+            : `inset(0 0 100% 0${round})`
+      const revealed = radius ? `inset(0 round ${radius}px)` : 'inset(0% 0 0 0)'
       try {
         el.setAttribute('data-curtain', '')
+        if (radius) el.dataset.curtainR = String(radius)
         const tween = gsap.fromTo(
           el,
           { clipPath: hidden, webkitClipPath: hidden },
           {
-            clipPath: 'inset(0% 0 0 0)', webkitClipPath: 'inset(0% 0 0 0)',
+            clipPath: revealed, webkitClipPath: revealed,
             duration: 1.1, ease: 'power4.out',
             scrollTrigger: { trigger: el, start: 'top 82%', toggleActions: 'restart reset restart reset' },
           },
