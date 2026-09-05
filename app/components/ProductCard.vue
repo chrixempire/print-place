@@ -1,31 +1,71 @@
 <script setup lang="ts">
+export interface ProductCrop { iw: number; ih: number; ox?: number; oy?: number; objectPosition?: string }
 export interface Product {
   image: string
   name: string
   price: string
+  crop?: ProductCrop
+  featuredCrop?: ProductCrop
 }
-defineProps<{ product: Product }>()
+
+/** Figma 18491:463652 — side card frame 352×521, inner photo layer. */
+const FRAME_W = 352
+const FRAME_H = 521
+const SIDE_CROP: ProductCrop = { iw: 380, ih: 534 }
+const FEATURED_CROP: ProductCrop = { iw: 456, ih: 607 }
+
+const props = withDefaults(
+  defineProps<{ product: Product; flippable?: boolean; featured?: boolean }>(),
+  { flippable: true, featured: false },
+)
+
+const photoCrop = computed(() => {
+  if (props.featured) return props.product.featuredCrop ?? FEATURED_CROP
+  return props.product.crop ?? SIDE_CROP
+})
+
+const photoStyle = computed(() => {
+  const c = photoCrop.value
+  return {
+    width: `${(c.iw / FRAME_W) * 100}%`,
+    height: `${(c.ih / FRAME_H) * 100}%`,
+    left: c.ox != null ? `calc(50% + ${c.ox}px)` : '50%',
+    top: c.oy != null ? `calc(50% + ${c.oy}px)` : '50%',
+    transform: 'translate(-50%, -50%)',
+  }
+})
 </script>
 
 <template>
-  <!-- 3-D flip card: hover (or focus) flips to reveal the back face -->
-  <div class="flip group/flip aspect-[352/521] w-full [perspective:1400px]">
+  <!-- 3-D flip card: hover (or focus) flips to reveal the back face when flippable -->
+  <div
+    class="flip aspect-[352/521] w-full [perspective:1400px]"
+    :class="flippable ? 'group/flip' : ''"
+  >
     <div
-      class="flip-inner relative size-full rounded-2xl transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] [transform-style:preserve-3d] group-hover/flip:[transform:rotateY(180deg)] group-focus-within/flip:[transform:rotateY(180deg)]"
+      class="flip-inner relative size-full rounded-2xl transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] [transform-style:preserve-3d]"
+      :class="flippable ? 'group-hover/flip:[transform:rotateY(180deg)] group-focus-within/flip:[transform:rotateY(180deg)]' : ''"
     >
-      <!-- FRONT -->
-      <div class="absolute inset-0 overflow-hidden rounded-2xl bg-neutral-400 shadow-sm [backface-visibility:hidden] [transform:translateZ(0.1px)]">
-        <img
-          :src="product.image"
-          :alt="product.name"
-          loading="lazy"
-          decoding="async"
-          class="absolute inset-0 size-full object-cover transition-transform duration-[600ms] ease-out group-hover/flip:scale-[1.06]"
-        />
+      <!-- FRONT — Figma 18491:463820: 352×521 frame, inner crop, #802714 footer -->
+      <div class="absolute inset-0 overflow-hidden rounded-2xl bg-neutral-500 shadow-sm [backface-visibility:hidden] [transform:translateZ(0.1px)]">
+        <div
+          class="pointer-events-none absolute"
+          :style="photoStyle"
+        >
+          <img
+            :src="product.image"
+            :alt="product.name"
+            loading="lazy"
+            decoding="async"
+            class="pointer-events-none absolute inset-0 size-full max-w-none object-cover transition-transform duration-[600ms] ease-out"
+            :class="flippable ? 'group-hover/flip:scale-[1.06]' : ''"
+            :style="photoCrop.objectPosition ? { objectPosition: photoCrop.objectPosition } : undefined"
+          />
+        </div>
         <!-- top-right corner bracket -->
         <span class="absolute right-0 top-0 size-3 border-r-2 border-t-2 border-white/90"></span>
         <!-- name / price bar -->
-        <div class="absolute inset-x-0 bottom-0 flex items-center justify-between bg-[#31301c] px-2.5 py-1 text-white">
+        <div class="absolute inset-x-0 bottom-0 flex items-center justify-between bg-[#802714] px-2.5 py-1 text-white">
           <span class="text-[16px] font-medium leading-[26px]">{{ product.name }}</span>
           <span class="text-[18px] font-bold">{{ product.price }}</span>
         </div>
