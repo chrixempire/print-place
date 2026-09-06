@@ -105,8 +105,12 @@ const dragging = ref(false)
 // Exact width of one full set = left offset of the first card of the 2nd set.
 const setWidth = () => {
   const el = teamTrack.value
-  if (!el || el.children.length <= team.length) return 0
-  return (el.children[team.length] as HTMLElement).offsetLeft - (el.children[0] as HTMLElement).offsetLeft
+  if (!el) return 0
+  if (el.children.length > team.length) {
+    const w = (el.children[team.length] as HTMLElement).offsetLeft - (el.children[0] as HTMLElement).offsetLeft
+    if (w > 1) return w
+  }
+  return el.scrollWidth > 1 ? el.scrollWidth / 2 : 0
 }
 const wrap = (v: number, w: number) => (w > 0 ? ((v % w) + w) % w : v)
 
@@ -122,27 +126,62 @@ const scrollTeam = (dir: number) => {
   interactTimer = window.setTimeout(() => { interacting.value = false }, 600)
 }
 
-// Mouse drag-to-scroll; touch/pen use the browser's native horizontal scrolling.
-// Either way we pause the auto-scroll while the user is interacting so it doesn't
-// fight their gesture (on touch the RAF loop would otherwise overwrite scrollLeft
-// every frame, making swipes feel stuck).
+// Mouse drag-to-scroll; touch uses native horizontal pan + scroll listener.
+// Wheel / trackpad horizontal scroll also pauses the auto loop.
 let dragStartX = 0
 let dragStartScroll = 0
+let lastAutoScrollLeft = -1
+let prevScrollLeft = 0
+let normalizingScroll = false
+
+const normalizeTeamScroll = () => {
+  const el = teamTrack.value
+  if (!el || normalizingScroll || dragging.value) return
+  const w = setWidth()
+  if (w <= 1) return
+
+  const current = el.scrollLeft
+  const delta = current - prevScrollLeft
+  let target = wrap(current, w)
+
+  // Backward wrap — at the start, keep scrolling right into the duplicate set
+  if (current <= 2 && delta < 0) target = w + current
+
+  if (Math.abs(target - current) > 1) {
+    normalizingScroll = true
+    el.scrollLeft = target
+    prevScrollLeft = target
+    autoPos = wrap(target, w)
+    lastAutoScrollLeft = -1
+    normalizingScroll = false
+    return
+  }
+
+  prevScrollLeft = current
+  autoPos = target
+}
+
+const pauseAutoScroll = (ms = 1200) => {
+  interacting.value = true
+  clearTimeout(interactTimer)
+  interactTimer = window.setTimeout(() => { interacting.value = false }, ms)
+}
+
 const onTeamPointerDown = (e: PointerEvent) => {
   const el = teamTrack.value
   if (!el) return
-  interacting.value = true
-  clearTimeout(interactTimer)
+  pauseAutoScroll(1500)
+  lastAutoScrollLeft = -1
   if (e.pointerType === 'mouse') {
     dragging.value = true
     dragStartX = e.clientX
     dragStartScroll = el.scrollLeft
     el.setPointerCapture(e.pointerId)
   }
-  // touch/pen: let the native scroll container handle the pan
 }
 const onTeamPointerMove = (e: PointerEvent) => {
   if (!dragging.value) return
+  if (e.cancelable) e.preventDefault()
   const el = teamTrack.value!
   const w = setWidth()
   let x = dragStartScroll - (e.clientX - dragStartX)
@@ -157,13 +196,37 @@ const onTeamPointerUp = (e: PointerEvent) => {
     dragging.value = false
     teamTrack.value?.releasePointerCapture?.(e.pointerId)
   }
-  // Resume the loop only after any touch momentum has settled.
-  clearTimeout(interactTimer)
-  interactTimer = window.setTimeout(() => { interacting.value = false }, 1000)
+  normalizeTeamScroll()
+  pauseAutoScroll(e.pointerType === 'touch' ? 2500 : 1500)
+}
+
+const onTeamWheel = (e: WheelEvent) => {
+  const el = teamTrack.value
+  if (!el) return
+  const absX = Math.abs(e.deltaX)
+  const absY = Math.abs(e.deltaY)
+  // Only hijack horizontal wheel/trackpad gestures — let vertical scroll reach the page.
+  if (absX <= absY || absX < 1) return
+  e.preventDefault()
+  pauseAutoScroll(1500)
+  lastAutoScrollLeft = -1
+  el.scrollLeft += e.deltaX
+  normalizeTeamScroll()
+}
+
+const onTeamScroll = () => {
+  const el = teamTrack.value
+  if (!el || normalizingScroll || dragging.value) return
+  normalizeTeamScroll()
+  // Pause auto-scroll for user-driven momentum (not our own loop correction)
+  if (lastAutoScrollLeft >= 0 && Math.abs(el.scrollLeft - lastAutoScrollLeft) > 2) {
+    lastAutoScrollLeft = -1
+    pauseAutoScroll(1200)
+  }
 }
 
 // Continuous leftward auto-scroll; yields during drag / arrow interaction.
-const AUTO_SPEED = 42 // px per second
+const AUTO_SPEED = 55 // px per second — matches hero collage pace
 let rafId = 0
 let lastTs = 0
 let autoPos = 0
@@ -179,13 +242,24 @@ const autoTick = (ts: number) => {
     return
   }
   autoPos = wrap(autoPos + AUTO_SPEED * dt, w)
+  lastAutoScrollLeft = autoPos
   el.scrollLeft = autoPos
 }
-onMounted(() => {
-  const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-  if (!reduced) rafId = requestAnimationFrame(autoTick)
+onMounted(async () => {
+  await nextTick()
+  requestAnimationFrame(() => {
+    const el = teamTrack.value
+    if (el) prevScrollLeft = el.scrollLeft
+    const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    if (!reduced) rafId = requestAnimationFrame(autoTick)
+  })
+  teamTrack.value?.addEventListener('scroll', onTeamScroll, { passive: true })
 })
-onBeforeUnmount(() => { cancelAnimationFrame(rafId); clearTimeout(interactTimer) })
+onBeforeUnmount(() => {
+  cancelAnimationFrame(rafId)
+  clearTimeout(interactTimer)
+  teamTrack.value?.removeEventListener('scroll', onTeamScroll)
+})
 
 // Cinematic hero entrance + collage depth-drift on scroll.
 const heroRoot = ref<HTMLElement | null>(null)
@@ -375,9 +449,9 @@ const faqs: FaqItem[] = [
 
     <!-- PROCESS -->
     <section class="bg-stone-500 px-5 py-16 md:px-6 md:py-24">
-      <div class="mx-auto flex max-w-[1080px] flex-col items-center gap-10 md:flex-row md:items-center md:gap-12">
-        <!-- Figma 18491:463453 — 532×606, 16px radius on all corners -->
-        <div class="process-photo md:w-[532px] md:shrink-0">
+      <div class="process-section mx-auto flex max-w-[1080px] flex-col">
+        <!-- Figma 18491:463453 — 532×606, 16px radius -->
+        <div class="process-photo">
           <img
             src="/img/about/process.png"
             alt="Our process"
@@ -386,16 +460,16 @@ const faqs: FaqItem[] = [
             class="process-photo__img"
           />
         </div>
-        <div class="w-full md:flex-1">
-          <h2 v-words class="text-[32px] font-bold leading-tight tracking-[-1px] text-neutral-500 md:text-[46px] md:leading-[50px] md:tracking-[-1.38px]">
+        <div class="process-copy w-full min-w-0">
+          <h2 v-words class="process-copy__head font-bold text-neutral-500">
             Process over promises
           </h2>
-          <p v-anim:up="120" class="mt-3 text-[18px] leading-6 text-neutral-400">Here’s why you should work with us.</p>
-          <div v-anim:up.stagger="{ delay: 0.1 }" class="mt-6 flex flex-col">
+          <p v-anim:up="120" class="process-copy__sub mt-3 text-neutral-400">Here’s why you should work with us.</p>
+          <div v-anim:up.stagger="{ delay: 0.1 }" class="mt-6 flex w-full flex-col">
             <button
               v-for="(f, i) in features"
               :key="f.title"
-              class="flex w-full cursor-pointer items-start justify-between gap-6 border-b border-gray-500 py-3.5 text-left"
+              class="flex w-full cursor-pointer items-start justify-between gap-4 border-b border-gray-500 py-3.5 text-left sm:gap-6"
               :aria-expanded="openFeature === i"
               @click="toggleFeature(i)"
             >
@@ -412,14 +486,14 @@ const faqs: FaqItem[] = [
                     aria-hidden="true"
                     v-html="f.icon"
                   ></svg>
-                  <span class="text-[20px] font-medium leading-[26px]">{{ f.title }}</span>
+                  <span class="process-feature__title font-medium">{{ f.title }}</span>
                 </div>
                 <div
                   class="grid transition-[grid-template-rows] duration-300 ease-out"
                   :style="{ gridTemplateRows: openFeature === i ? '1fr' : '0fr' }"
                 >
                   <div class="overflow-hidden">
-                    <p class="text-[18px] leading-5 text-neutral-300">{{ f.desc }}</p>
+                    <p class="process-feature__desc text-neutral-300">{{ f.desc }}</p>
                   </div>
                 </div>
               </div>
@@ -444,24 +518,39 @@ const faqs: FaqItem[] = [
 
     <!-- SIDE HUSTLE -->
     <section class="bg-stone-500 px-5 py-16 md:px-6 md:py-24">
-      <div class="mx-auto flex max-w-[1080px] flex-col items-start gap-10 md:flex-row md:items-center md:justify-between md:gap-[143px]">
-        <div class="flex max-w-[407px] flex-col gap-1.5 md:gap-2.5">
-          <h2 v-words class="max-w-[296px] text-[28px] font-bold leading-[36px] tracking-[-0.84px] text-neutral-500 md:max-w-none md:text-[50px] md:leading-[42px] md:tracking-[-1.5px]">
+      <div class="founder-section mx-auto flex max-w-[1080px] flex-col gap-10">
+        <div class="founder-copy flex w-full flex-col gap-1.5 md:gap-2.5">
+          <h2 v-words class="founder-copy__head font-bold text-neutral-500">
             Started as a side hustle in a hostel room
           </h2>
-          <p v-anim:up="200" class="text-[14px] leading-normal text-neutral-400 md:text-[18px] md:leading-[26px]">
+          <p v-anim:up="200" class="founder-copy__sub text-neutral-400">
             With only a 200 level engineering student from the university of Lagos. Today, we are a growing team
             building structure in an industry that often lacks it. We have seen the delays, the inconsistency and
             the mediocrity culture so we decided to do branding differently.
           </p>
         </div>
-        <div v-curtain class="group relative h-[420px] w-full overflow-hidden rounded-2xl bg-[radial-gradient(circle_at_50%_32%,#e8cfa0,#bd9862_52%,#6f4f30)] md:h-[509px] md:w-[530px] md:shrink-0">
-          <!-- Mobile: exact Figma composite (headshot on the golden backdrop, baked in). -->
-          <img src="/img/about/founder-mobile.webp" alt="Olajumoke Olutomiwa" loading="lazy" decoding="async" class="size-full object-cover transition-transform duration-[700ms] ease-out group-hover:scale-[1.05] md:hidden" />
-          <!-- Desktop: cutout over the CSS golden gradient. -->
-          <img src="/img/about/founder.webp" alt="Olajumoke Olutomiwa" loading="lazy" decoding="async" class="hidden size-full object-cover object-top transition-transform duration-[700ms] ease-out group-hover:scale-[1.05] md:block" />
-          <div class="absolute inset-x-0 bottom-0 h-[58%] bg-gradient-to-t from-black/90 via-black/45 to-transparent"></div>
-          <div class="absolute inset-x-0 bottom-6 flex flex-col items-center text-white">
+        <div
+          v-curtain
+          class="founder-photo group relative w-full overflow-hidden rounded-2xl min-[800px]:bg-[radial-gradient(circle_at_50%_32%,#e8cfa0,#bd9862_52%,#6f4f30)]"
+        >
+          <!-- Mobile + 640–799px: Figma composite — full frame, name/title baked in -->
+          <img
+            src="/img/about/founder-mobile.webp"
+            alt="Olajumoke Olutomiwa, Founder and CEO"
+            loading="lazy"
+            decoding="async"
+            class="block w-full h-auto transition-transform duration-[700ms] ease-out group-hover:scale-[1.02] min-[800px]:hidden"
+          />
+          <!-- Desktop: cutout over the CSS golden gradient -->
+          <img
+            src="/img/about/founder.webp"
+            alt="Olajumoke Olutomiwa"
+            loading="lazy"
+            decoding="async"
+            class="hidden size-full object-cover object-top transition-transform duration-[700ms] ease-out group-hover:scale-[1.05] min-[800px]:block"
+          />
+          <div class="absolute inset-x-0 bottom-0 hidden h-[58%] bg-gradient-to-t from-black/90 via-black/45 to-transparent min-[800px]:block"></div>
+          <div class="absolute inset-x-0 bottom-6 hidden flex-col items-center text-white min-[800px]:flex">
             <p class="text-[20px] font-bold leading-6">Olajumoke Olutomiwa</p>
             <p class="text-[16px] font-medium leading-5">Founder &amp; CEO</p>
           </div>
@@ -480,12 +569,13 @@ const faqs: FaqItem[] = [
         <div
           ref="teamTrack"
           v-flip.stagger
-          class="no-scrollbar flex gap-4 select-none overflow-x-auto px-5 py-3"
+          class="team-track no-scrollbar flex gap-4 select-none overflow-x-auto px-5 py-3"
           :class="dragging ? 'cursor-grabbing' : 'cursor-grab'"
           @pointerdown="onTeamPointerDown"
           @pointermove="onTeamPointerMove"
           @pointerup="onTeamPointerUp"
           @pointercancel="onTeamPointerUp"
+          @wheel="onTeamWheel"
         >
           <template v-for="s in 2" :key="s">
             <div
@@ -565,7 +655,7 @@ const faqs: FaqItem[] = [
     </section>
 
     <!-- BUDGET -->
-    <section id="budget" class="budget relative overflow-hidden bg-[#070607] min-[1015px]:bg-neutral-500">
+    <section id="budget" class="budget relative overflow-hidden bg-[#070607] min-[800px]:bg-neutral-500">
       <div
         class="budget-gallery"
         @pointerenter="orbitPaused = true"
@@ -586,20 +676,20 @@ const faqs: FaqItem[] = [
       </div>
       <!-- Mobile copy — Figma 464424 -->
       <div class="budget-copy-mobile">
-        <h2 v-words class="text-[28px] font-bold leading-[36px] tracking-[-0.84px] text-white">
+        <h2 v-words class="budget-copy-mobile__head font-bold text-white">
           <span class="block">Stop guessing</span>
           <span class="block">your merch budget</span>
         </h2>
-        <p v-anim:up="200" class="text-[16px] text-[#e2e2df]">We’ve already done the maths for you</p>
+        <p v-anim:up="200" class="budget-copy-mobile__sub text-[#e2e2df]">We’ve already done the maths for you</p>
         <AppButton to="/built-for-you" class="self-start">Explore our options</AppButton>
       </div>
       <!-- Desktop copy -->
       <div class="budget-copy">
         <div class="flex max-w-[clamp(240px,31vw,446px)] flex-col gap-3">
-          <h2 v-words class="text-[50px] font-bold leading-[50px] tracking-[-1.5px] text-white">
+          <h2 v-words class="budget-copy__head font-bold text-white">
             Stop guessing your merch budget
           </h2>
-          <p v-anim:up="200" class="text-[18px] text-gray-500">We’ve already done the maths for you</p>
+          <p v-anim:up="200" class="budget-copy__sub text-gray-500">We’ve already done the maths for you</p>
           <AppButton to="/built-for-you" class="self-start">Explore our options</AppButton>
         </div>
       </div>
@@ -645,23 +735,21 @@ const faqs: FaqItem[] = [
   display: block;
 }
 
-/* Process photo — Figma 18491:463453. clip-path round is the reliable clip;
-   no transforms on the image (they break bottom corner radius in WebKit). */
+/* Process — <640 stack · 640–799 centered · 800+ row (fluid until 1080) */
+.process-section {
+  align-items: flex-start;
+  gap: clamp(2rem, 5vw, 2.5rem);
+  text-align: left;
+}
 .process-photo {
   position: relative;
   width: 100%;
-  height: 300px;
+  aspect-ratio: 532 / 606;
   overflow: hidden;
   border-radius: 16px;
   clip-path: inset(0 round 16px);
   -webkit-clip-path: inset(0 round 16px);
   transform: translateZ(0);
-}
-@media (min-width: 768px) {
-  .process-photo {
-    width: 532px;
-    height: 606px;
-  }
 }
 .process-photo__img {
   position: absolute;
@@ -673,6 +761,152 @@ const faqs: FaqItem[] = [
   object-fit: cover;
   object-position: center;
   pointer-events: none;
+}
+.process-copy {
+  width: 100%;
+  max-width: 100%;
+}
+.process-copy__head {
+  font-size: clamp(28px, 5vw, 46px);
+  line-height: clamp(34px, 5.2vw, 50px);
+  letter-spacing: clamp(-0.84px, -0.12vw, -1.38px);
+}
+.process-copy__sub {
+  font-size: clamp(16px, 2.2vw, 18px);
+  line-height: clamp(22px, 3vw, 24px);
+}
+.process-feature__title {
+  font-size: clamp(18px, 2.5vw, 20px);
+  line-height: clamp(24px, 3vw, 26px);
+}
+.process-feature__desc {
+  font-size: clamp(16px, 2vw, 18px);
+  line-height: clamp(22px, 2.6vw, 24px);
+}
+
+@media (min-width: 640px) and (max-width: 799px) {
+  .process-section {
+    align-items: center;
+    text-align: center;
+  }
+  .process-copy {
+    max-width: min(100%, 548px);
+  }
+  .process-photo {
+    max-width: min(100%, 480px);
+  }
+}
+
+@media (min-width: 800px) {
+  .process-section {
+    flex-direction: row;
+    align-items: center;
+    gap: clamp(32px, 5vw, 48px);
+  }
+  .process-photo {
+    flex: 1 1 320px;
+    min-width: 0;
+    width: auto;
+    max-width: 532px;
+  }
+  .process-copy {
+    flex: 1 1 380px;
+    min-width: 0;
+    text-align: left;
+  }
+}
+
+@media (min-width: 1080px) {
+  .process-section {
+    gap: 48px;
+  }
+  .process-photo {
+    flex: 0 0 532px;
+    width: 532px;
+    max-width: 532px;
+  }
+  .process-copy {
+    flex: 1 1 0;
+  }
+}
+
+.founder-copy__head {
+  font-size: clamp(28px, 4.5vw, 50px);
+  line-height: clamp(36px, 4.8vw, 50px);
+  letter-spacing: clamp(-0.84px, -0.12vw, -1.5px);
+}
+.founder-copy__sub {
+  font-size: clamp(14px, 1.8vw, 18px);
+  line-height: clamp(22px, 2.4vw, 26px);
+}
+
+/* Side hustle — <640 left stack · 640–799 centered · 800+ row (fluid until 1080) */
+.founder-section {
+  align-items: flex-start;
+  gap: clamp(2rem, 5vw, 2.5rem);
+  text-align: left;
+}
+.founder-copy {
+  width: 100%;
+  max-width: 100%;
+}
+.founder-photo {
+  width: 100%;
+}
+
+@media (min-width: 640px) and (max-width: 799px) {
+  .founder-section {
+    align-items: center;
+    text-align: center;
+  }
+  .founder-copy {
+    align-items: center;
+    max-width: min(100%, 548px);
+  }
+  .founder-photo {
+    width: 100%;
+    max-width: min(100%, 480px);
+  }
+}
+
+@media (min-width: 800px) {
+  .founder-section {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: clamp(32px, 6vw, 143px);
+  }
+  .founder-copy {
+    flex: 1 1 280px;
+    min-width: 0;
+    max-width: 407px;
+    align-items: flex-start;
+  }
+  .founder-photo {
+    flex: 1 1 320px;
+    min-width: 0;
+    width: auto;
+    max-width: 530px;
+    aspect-ratio: 530 / 509;
+    height: auto;
+  }
+}
+
+@media (min-width: 1080px) {
+  .founder-section {
+    gap: 143px;
+  }
+  .founder-copy {
+    flex: 0 0 407px;
+    width: 407px;
+    max-width: 407px;
+  }
+  .founder-photo {
+    flex: 0 0 530px;
+    width: 530px;
+    height: 509px;
+    max-width: 530px;
+  }
 }
 
 /* Budget — one continuous ring (marquee-style spin), mobile + desktop */
@@ -701,33 +935,66 @@ const faqs: FaqItem[] = [
   flex-direction: column;
   gap: calc(10px * var(--b));
 }
+.budget-copy-mobile__head {
+  font-size: clamp(22px, calc(24px * var(--b)), 26px);
+  line-height: clamp(28px, calc(31px * var(--b)), 33px);
+  letter-spacing: -0.72px;
+}
+.budget-copy-mobile__sub {
+  font-size: clamp(13px, calc(14px * var(--b)), 15px);
+  line-height: 1.35;
+}
+.budget-copy-mobile :deep(a),
+.budget-copy-mobile :deep(button) {
+  font-size: clamp(14px, calc(15px * var(--b)), 16px);
+  line-height: 1.25;
+  padding: 0.55rem 1.15rem;
+}
 .budget-copy {
   display: none;
 }
+.budget-copy__head {
+  font-size: clamp(34px, 4.2vw, 50px);
+  line-height: clamp(38px, 4.2vw, 50px);
+  letter-spacing: clamp(-1px, -0.1vw, -1.5px);
+}
+.budget-copy__sub {
+  font-size: clamp(15px, 1.6vw, 18px);
+  line-height: 1.4;
+}
 
-@media (max-width: 1014px) {
+@media (max-width: 799px) {
   .budget {
     height: calc(610px * var(--b));
-    /* Tight radius + overlapping cards → compact semicircle */
+    /* Scales from 390px Figma frame — 130×173 cards at reference width */
     --orbit-rad: calc(298px * var(--b));
     --orbit-cw: calc(130px * var(--b));
     --orbit-ch: calc(173px * var(--b));
   }
   .budget-copy-mobile {
     top: calc(246px * var(--b));
+    left: calc(16px * var(--b));
+    width: calc(269px * var(--b));
   }
 }
 
-/* 600–1014px: 10% smaller than full scale */
-@media (min-width: 600px) and (max-width: 1014px) {
+/* 640–799px: lock to 640px scale (213×283 cards) */
+@media (min-width: 640px) and (max-width: 799px) {
   .budget {
-    --orbit-rad: calc(298px * var(--b) * 0.9);
-    --orbit-cw: calc(130px * var(--b) * 0.9);
-    --orbit-ch: calc(173px * var(--b) * 0.9);
+    height: calc(610px * 640 / 390);
+    --orbit-left: calc(39px * 640 / 390);
+    --orbit-rad: calc(298px * 640 / 390);
+    --orbit-cw: 213px;
+    --orbit-ch: 283px;
+  }
+  .budget-copy-mobile {
+    top: calc(246px * 640 / 390);
+    left: calc(16px * 640 / 390);
+    width: calc(269px * 640 / 390);
   }
 }
 
-@media (min-width: 1015px) {
+@media (min-width: 800px) {
   .budget-copy-mobile {
     display: none;
   }
@@ -739,6 +1006,12 @@ const faqs: FaqItem[] = [
     align-items: center;
     padding-right: 1.5rem;
     padding-left: calc(var(--orbit-left) + var(--orbit-rad) + var(--orbit-ch) / 2 + var(--orbit-gap));
+  }
+  .budget-copy :deep(a),
+  .budget-copy :deep(button) {
+    font-size: clamp(15px, 1.5vw, 18px);
+    line-height: 1.35;
+    padding: 0.65rem 1.35rem;
   }
   .budget {
     --orbit-left: 32px;
@@ -796,5 +1069,11 @@ const faqs: FaqItem[] = [
   .orbit {
     animation: none;
   }
+}
+
+.team-track {
+  touch-action: pan-x;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
 }
 </style>

@@ -17,11 +17,11 @@ const isDark = props.bundle.theme === 'dark'
 </script>
 
 <template>
-  <div class="group flex flex-col items-stretch gap-4 md:flex-row md:items-center">
-    <!-- Image — fluid "water" hover: tilt toward cursor, caustic light + drop ripple -->
+  <div class="group flex flex-col items-stretch gap-4 min-[768px]:flex-row min-[768px]:items-start min-[1015px]:items-stretch">
+    <!-- Image — stack <768 · row 768–1014 fixed height · 1015+ stretches to match card -->
     <div
       v-liquid
-      class="group/img relative h-[260px] w-full shrink-0 overflow-hidden rounded-2xl sm:h-[360px] md:h-[551px] md:w-[648px]"
+      class="group/img relative h-[260px] w-full min-w-0 overflow-hidden rounded-2xl sm:h-[360px] min-[768px]:h-[551px] min-[768px]:max-w-[648px] min-[768px]:shrink-0 min-[768px]:flex-[648] min-[768px]:basis-0 min-[1015px]:min-h-[551px] min-[1015px]:h-auto min-[1015px]:self-stretch"
     >
       <img
         :src="bundle.image"
@@ -35,7 +35,7 @@ const isDark = props.bundle.theme === 'dark'
 
     <!-- Content card -->
     <div
-      class="flex w-full shrink-0 flex-col justify-between gap-8 overflow-hidden rounded-2xl p-6 md:h-[551px] md:w-[416px]"
+      class="flex w-full min-w-0 flex-col justify-between gap-8 overflow-hidden rounded-2xl p-6 min-[768px]:max-w-[416px] min-[768px]:flex-[416] min-[768px]:basis-0 min-[1015px]:min-h-[551px] min-[1015px]:self-stretch"
       :class="isDark ? 'bg-neutral-500 text-white' : 'bg-gray-300 text-neutral-500'"
     >
       <!-- Top -->

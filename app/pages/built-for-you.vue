@@ -155,7 +155,7 @@ onMounted(() => {
          unstack when you scroll back up. Sticky handles the pinning; a scrubbed
          GSAP tween eases each covered card back in scale + dims it, so the deck
          forms and releases smoothly instead of snapping. -->
-    <section class="mx-auto max-w-[1080px] px-5 pb-20 md:px-6">
+    <section class="mx-auto max-w-[1080px] overflow-x-clip px-5 pb-20 md:px-6">
       <div ref="stackRoot" class="flex flex-col gap-5">
         <div
           v-for="(b, i) in bundles"
