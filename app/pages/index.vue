@@ -418,7 +418,7 @@ const faqs: FaqItem[] = [
             v-for="(img, i) in heroLoop"
             :key="i"
             :aria-hidden="i >= heroCollage.length ? 'true' : undefined"
-            class="hero-card group relative shrink-0 overflow-hidden rounded-[2px] bg-white"
+            class="hero-card group relative shrink-0 overflow-hidden bg-white"
             :style="{
               width: `calc(${img.w} * var(--s) * 1px)`,
               height: `calc(${img.h} * var(--s) * 1px)`,
@@ -730,9 +730,11 @@ const faqs: FaqItem[] = [
   flex: 0 0 auto;
   align-self: flex-end;
   line-height: 0;
+  border-radius: 0;
 }
 .hero-card img {
   display: block;
+  border-radius: 0;
 }
 
 /* Process — <640 stack · 640–799 centered · 800+ row (fluid until 1080) */
