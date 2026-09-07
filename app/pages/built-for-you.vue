@@ -63,13 +63,12 @@ const bundles: Bundle[] = [
 
 const products: Product[] = [
   { image: '/img/products/tshirt.webp', name: 'T-shirt', price: 'N7,000' },
-  { image: '/img/products/facecap.webp', name: 'Face cap', price: 'N4,000' },
-  { image: '/img/products/thermal.png', name: 'Thermal Bottles', price: 'N7,500', crop: { iw: 375.837, ih: 527.5, ox: -0.08, oy: 0.25 } },
+  { image: '/img/products/facecap.webp', name: 'Cap', price: 'N4,500' },
+  { image: '/img/products/thermal.webp', name: 'Thermal bottle', price: 'N8,000' },
   { image: '/img/products/tote.webp', name: 'Tote bag', price: 'N5,000' },
-  { image: '/img/products/umbrella.webp', name: 'Umbrella', price: 'N9,000' },
-  { image: '/img/products/journal.webp', name: 'Spiral Journals', price: 'N1,000' },
-  { image: '/img/products/handfans.webp', name: 'Handfans', price: 'N1,000' },
-  { image: '/img/products/mug.webp', name: 'Coffee mug', price: 'N3,000' },
+  { image: '/img/products/spiral-notebook.jpg', name: 'Spiral notebook', price: 'N1,200' },
+  { image: '/img/products/handfans.jpg', name: 'Handfans', price: 'N1,000 each' },
+  { image: '/img/products/mug.webp', name: 'Mug cup', price: 'N8,000' },
   { image: '/img/products/ballpen.webp', name: 'Ball pen', price: 'N1,200' },
 ]
 

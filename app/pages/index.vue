@@ -561,7 +561,7 @@ const faqs: FaqItem[] = [
     <!-- TEAM -->
     <section class="bg-stone-500 pb-6 pt-16 md:pb-8 md:pt-20">
       <h2 v-words class="mb-8 px-5 text-center text-[28px] font-bold leading-[42px] tracking-[-0.84px] text-neutral-500 md:text-[32px]">
-        The people on your order
+        The Humans Behind Your Merch
       </h2>
       <!-- original carousel (hover arrows + hand/drag); the team is rendered twice
            so the continuous leftward auto-scroll wraps by one set width seamlessly -->
