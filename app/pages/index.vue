@@ -1074,7 +1074,8 @@ const faqs: FaqItem[] = [
 }
 
 .team-track {
-  touch-action: pan-x;
+  /* Allow vertical page scroll while still panning the carousel horizontally */
+  touch-action: pan-x pan-y;
   overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
 }
