@@ -44,7 +44,7 @@ const smallB: CollageCard[] = [
 ]
 // Gallery photos fill their frame edge-to-edge (3:2 at h=437) — no inner crop.
 const bigGallery = (n: number): CollageCard => ({
-  src: `/img/gallery/gallery-${n}.webp`,
+  src: n === 3 ? '/img/gallery/gallery-3.jpg' : `/img/gallery/gallery-${n}.webp`,
   w: 656,
   h: 437,
   big: true,
